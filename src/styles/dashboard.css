@@ -1,0 +1,50 @@
+.dash-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--mist);
+  margin-bottom: var(--space-4);
+}
+
+.dash-headline {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-2);
+}
+
+.dash-sub {
+  color: var(--mist);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 52ch;
+  margin-bottom: var(--space-5);
+}
+
+.dash-stats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.dash-stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dash-stat-value {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--paper);
+}
+
+.dash-stat-label {
+  font-size: 13px;
+  color: var(--mist-dim);
+}
