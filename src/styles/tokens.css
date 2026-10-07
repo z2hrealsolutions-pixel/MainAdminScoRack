@@ -1,0 +1,123 @@
+/* Two themes: dark (the default) and light, chosen by data-theme on the page (see lib/theme.js).
+   Every colour in the apps comes from here, nothing is written into a stylesheet. */
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink: #172431;
+  --panel: #20313f;
+  --panel-raised: #283c4d;
+  --line: #3b5164;
+  --line-soft: #2d4151;
+
+  --paper: #f2f5f8;
+  --mist: #aab9c7;
+  --mist-dim: #a9bdce;
+
+  /* the logo's turquoise, in the sizes it is used at */
+  --lamp: #0097b2;
+  --lamp-strong: #1bb4d0;
+  --lamp-dim: #168aa5;
+  --lamp-text: #52d1e9;
+  --lamp-small: #4fcbe3;
+  --lamp-score: #12a9c6;
+  --on-lamp: #06222b;
+
+  --danger: #e0786e;
+  --danger-dim: #3a2320;
+
+  /* the page behind everything, and its glow */
+  --page: #132030;
+  --page-glow-a: rgba(0, 151, 178, 0.3);
+  --page-glow-b: rgba(110, 140, 255, 0.16);
+
+  /* glass: only for bars and menus */
+  --glass: rgba(20, 32, 48, 0.62);
+  --glass-line: rgba(255, 255, 255, 0.09);
+
+  /* soft tiles with layered shadows, the spectator and referee look */
+  --tile: linear-gradient(160deg, #2a3e50, #223445);
+  --tile-line: rgba(255, 255, 255, 0.07);
+  --tile-shadow: 0 18px 40px rgba(4, 10, 18, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --inner: rgba(255, 255, 255, 0.05);
+  --inner-line: rgba(255, 255, 255, 0.09);
+  --live-bg: linear-gradient(160deg, rgba(0, 151, 178, 0.17), rgba(0, 151, 178, 0.05));
+  --live-line: rgba(30, 170, 200, 0.6);
+  --live-glow: 0 10px 34px rgba(0, 151, 178, 0.22);
+  --win-tint: rgba(0, 151, 178, 0.1);
+
+  /* solid tiles, the console look */
+  --soft-tile: #20313f;
+  --soft-inner: #263a4b;
+  --soft-line: rgba(255, 255, 255, 0.06);
+  --soft-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+
+  --overlay: rgba(8, 11, 13, 0.78);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --ink: #f2f6f9;
+  --panel: #ffffff;
+  --panel-raised: #ffffff;
+  --line: #d3dde6;
+  --line-soft: #e5ecf2;
+
+  --paper: #12202b;
+  --mist: #4a5d6e;
+  --mist-dim: #506273;
+
+  --lamp: #0097b2;
+  --lamp-strong: #12a9c6;
+  --lamp-dim: #87cbd9;
+  --lamp-text: #006b81;
+  --lamp-small: #006b81;
+  --lamp-score: #0097b2;
+  --on-lamp: #071a1f;
+
+  --danger: #c0392b;
+  --danger-dim: #fbe9e6;
+
+  --page: #e9f1f6;
+  --page-glow-a: rgba(0, 151, 178, 0.2);
+  --page-glow-b: rgba(110, 140, 255, 0.13);
+
+  --glass: rgba(255, 255, 255, 0.66);
+  --glass-line: rgba(255, 255, 255, 0.95);
+
+  --tile: linear-gradient(160deg, #ffffff, #f4f9fc);
+  --tile-line: rgba(255, 255, 255, 0.95);
+  --tile-shadow: 0 18px 40px rgba(24, 72, 96, 0.11), 0 2px 6px rgba(24, 72, 96, 0.06), inset 0 1px 0 #ffffff;
+  --inner: rgba(18, 40, 56, 0.04);
+  --inner-line: rgba(18, 40, 56, 0.08);
+  --live-bg: linear-gradient(160deg, rgba(0, 151, 178, 0.15), rgba(0, 151, 178, 0.04));
+  --live-line: rgba(0, 151, 178, 0.55);
+  --live-glow: 0 10px 30px rgba(0, 151, 178, 0.16);
+  --win-tint: rgba(0, 151, 178, 0.16);
+
+  --soft-tile: #ffffff;
+  --soft-inner: #f5f8fa;
+  --soft-line: rgba(18, 40, 56, 0.06);
+  --soft-shadow: 0 6px 20px rgba(24, 50, 72, 0.07);
+
+  --overlay: rgba(230, 238, 244, 0.82);
+}
+
+:root {
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-tile: 22px;
+  --radius-inner: 16px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+  --space-6: 64px;
+}

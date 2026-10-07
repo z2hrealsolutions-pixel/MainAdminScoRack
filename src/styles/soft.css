@@ -1,0 +1,89 @@
+/* Soft Bento: the look of the console. Calm, solid tiles with soft shadows and rounder corners.
+   No glass and no glow here, this is where forms and tables live and they have to stay plain to read.
+   Every colour is a setting from tokens.css, so it is the same design in the light theme and the dark one. */
+
+.shell-topbar,
+.shell-nav {
+  background: var(--page);
+}
+
+/* a tile: each section of a page, and the figures on the dashboard */
+.tenant-section,
+.dash-stat {
+  background: var(--soft-tile);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-tile);
+  padding: 22px;
+  box-shadow: var(--soft-shadow);
+}
+
+.tenant-section {
+  max-width: 1000px;
+  margin: 0 0 var(--space-3);
+}
+
+.tenant-section-title {
+  margin-top: 0;
+}
+
+.dash-stat-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.dash-stat-link:hover {
+  border-color: var(--lamp-dim);
+}
+
+/* what sits inside a tile: a shade apart, no shadow */
+.division-row,
+.staff-row,
+.group-card,
+.mode-card,
+.roster-card {
+  background: var(--soft-inner);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-inner);
+  box-shadow: none;
+}
+
+.mode-card-on {
+  border-color: var(--lamp-dim);
+}
+
+.section-nav {
+  background: var(--page);
+}
+
+/* the venue page, as a bento: tiles of different sizes where there is room */
+.bento-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.bento-grid > .tenant-section {
+  margin: 0;
+  max-width: none;
+}
+
+@media (min-width: 1000px) {
+  .bento-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: start;
+  }
+  .bento-grid > :nth-child(1) {
+    grid-column: span 7;
+  }
+  .bento-grid > :nth-child(2) {
+    grid-column: span 5;
+  }
+  .bento-grid > :nth-child(3) {
+    grid-column: span 5;
+  }
+  .bento-grid > :nth-child(4) {
+    grid-column: span 7;
+  }
+  .bento-grid > :nth-child(n + 5) {
+    grid-column: 1 / -1;
+  }
+}

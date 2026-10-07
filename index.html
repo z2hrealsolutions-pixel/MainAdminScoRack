@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      /* the theme is set before the page is drawn, so there is no flash of the wrong one */
+      (function () {
+        try {
+          var pref = localStorage.getItem('scoreit-theme');
+          var dark = !window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = pref === 'light' || pref === 'dark' ? pref : dark ? 'dark' : 'light';
+          
+          var root = document.documentElement;
+          root.dataset.theme = theme;
+          root.dataset.themePref = pref === 'light' || pref === 'dark' ? pref : 'auto';
+        } catch (e) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
+    <title>ScoreIt by Z2HxRealSolutions</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
