@@ -104,7 +104,7 @@ export default function DuprExport({ tenantId, division }) {
         <input id="duprLocation" className="text-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Venue name, street, city" />
         {!tenant.address && (
           <p className="field-hint">
-            No address is saved for this venue. Type one here, or save it under the venue's details so
+            No venue address is saved for this tenant. Type one here, or save it in the tenant's Venue section so
             it fills in by itself next time.
           </p>
         )}

@@ -162,8 +162,8 @@ export default function TenantCreate({ email }) {
             autoComplete="off"
           />
           <p className="field-hint">
-            The person who will run this venue. They are sent a sign-in email straight away, and when
-            they open the link the venue appears for them and they can add their own staff. You can
+            The person who will run this tenant. They are sent a sign-in email straight away, and when
+            they open the link the tenant appears for them and they can add their own staff. You can
             also do this later from the tenant's page.
           </p>
         </div>

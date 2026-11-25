@@ -163,7 +163,7 @@ export function planErrorText(res) {
     case 'groups_unfinished':
       return `Finish the group matches first, ${res.left} still to play.`;
     case 'override_not_set':
-      return 'This knockout has already been played. Changing it needs the override password, and none has been set for this venue yet. Ask the ScoreIt team.';
+      return 'This knockout has already been played. Changing it needs the override password, and none has been set for this tenant yet. Ask the ScoreIt team.';
     case 'override_invalid':
       return `That override password is not right. ${res.attempts_left} ${res.attempts_left === 1 ? 'try' : 'tries'} left.`;
     case 'override_locked': {

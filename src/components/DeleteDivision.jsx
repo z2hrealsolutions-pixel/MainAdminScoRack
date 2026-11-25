@@ -14,7 +14,7 @@ export default function DeleteDivision({ tenantId, divisionId }) {
   const [error, setError] = useState('');
 
   if (!access.isOwner) {
-    return <p className="field-hint">Only an owner of the venue can delete a division.</p>;
+    return <p className="field-hint">Only an owner of the tenant can delete a division.</p>;
   }
 
   async function openPanel() {

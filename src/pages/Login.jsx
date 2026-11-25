@@ -50,7 +50,7 @@ export default function Login() {
 
         <h1 className="login-headline">Sign in</h1>
         <p className="login-sub">
-          For ScoreIt operators and venue organisers. Enter your email and
+          For ScoreIt operators and tenant organisers. Enter your email and
           we'll send you a link, no password needed.
         </p>
 
@@ -103,9 +103,9 @@ export default function Login() {
         )}
 
         <p className="login-footnote">
-          Venue organisers: use the exact email address you were invited
+          Tenant organisers: use the exact email address you were invited
           with. If you haven't been invited yet, ask whoever runs your
-          venue's ScoreIt account. Without an invitation the link will still
+          tenant's ScoreIt account. Without an invitation the link will still
           arrive, but the console will stay locked.
         </p>
       </div>

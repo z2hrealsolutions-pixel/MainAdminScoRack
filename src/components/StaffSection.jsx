@@ -76,7 +76,7 @@ export default function StaffSection({ tenantId, venueName }) {
   }
 
   async function copyInvite(address) {
-    const copied = await copyText(inviteMessage(venueName || 'the venue', address));
+    const copied = await copyText(inviteMessage(venueName || 'the tenant', address));
     setError('');
     setMessage(copied ? 'Copied. Paste it into WhatsApp, a text or an email.' : '');
   }
@@ -130,7 +130,7 @@ export default function StaffSection({ tenantId, venueName }) {
                       if (
                         window.confirm(
                           you
-                            ? 'Leave this venue? You will lose access straight away.'
+                            ? 'Leave this tenant? You will lose access straight away.'
                             : `Remove ${m.email}? They lose access straight away.`
                         )
                       ) {
@@ -204,7 +204,7 @@ export default function StaffSection({ tenantId, venueName }) {
               value={role}
               onChange={(event) => setRole(event.target.value)}
             >
-              <option value="staff">Staff, runs the venue</option>
+              <option value="staff">Staff, runs the tenant</option>
               <option value="owner">Owner, also manages the team</option>
             </select>
           </div>
@@ -218,7 +218,7 @@ export default function StaffSection({ tenantId, venueName }) {
           </p>
         </form>
       ) : (
-        <p className="field-hint">Only an owner of an active venue can change the team.</p>
+        <p className="field-hint">Only an owner of an active tenant can change the team.</p>
       )}
     </section>
   );

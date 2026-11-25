@@ -35,7 +35,7 @@ export default function OverrideCodePanel({ tenantId }) {
       return;
     }
     setCode('');
-    setDone('Override password saved. Give it to the venue yourself.');
+    setDone('Override password saved. Give it to the tenant yourself.');
     load();
   }
 
@@ -44,7 +44,7 @@ export default function OverrideCodePanel({ tenantId }) {
       <p className="field-hint">
         {status
           ? status.is_set
-            ? 'A password is set for this venue.'
+            ? 'A password is set for this tenant.'
             : 'No password is set yet. Until one is set, a knockout that has been played cannot be changed.'
           : ' '}
         {status && status.locked ? ' It is locked for a few minutes after too many wrong tries.' : ''}

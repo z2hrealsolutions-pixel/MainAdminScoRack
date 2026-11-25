@@ -13,7 +13,7 @@ export default function NotAuthorized({ email }) {
         <h1 className="login-headline">No access yet</h1>
         <p className="login-sub">
           <strong>{email}</strong> signed in successfully, but isn't linked
-          to a venue or to the ScoreIt team yet. Ask the owner of your venue
+          to a tenant or to the ScoreIt team yet. Ask the owner of your tenant
           to add exactly this address from their Team section, then sign in
           again. Or sign in with a different email.
         </p>

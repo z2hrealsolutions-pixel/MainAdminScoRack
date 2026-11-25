@@ -19,7 +19,7 @@ export function inviteMessage(venueName, email) {
   return (
     `You've been added to ${venueName} on ScoreIt. ` +
     `Open ${tenantConsoleUrl()} and sign in with ${email}, we'll send you a link, no password needed. ` +
-    `Open the link on your phone or computer and the venue appears.`
+    `Open the link on your phone or computer and the tenant appears.`
   );
 }
 

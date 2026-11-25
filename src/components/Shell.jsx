@@ -54,7 +54,7 @@ export default function Shell({ email, children }) {
         <main className="shell-main">
           {readOnly && (
             <div className="readonly-banner" role="status">
-              <strong>This venue is suspended.</strong> You can look around, but nothing can be
+              <strong>This tenant is suspended.</strong> You can look around, but nothing can be
               changed until it is reactivated. Contact the ScoreIt team.
             </div>
           )}

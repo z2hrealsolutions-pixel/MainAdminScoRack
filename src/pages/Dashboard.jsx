@@ -40,12 +40,12 @@ export default function Dashboard({ email }) {
       </div>
 
       <h1 className="dash-headline">Console online</h1>
-      <p className="dash-sub">Every venue rented out through ScoreIt, and the state each one is in.</p>
+      <p className="dash-sub">Every tenant on ScoreIt, and the state each one is in.</p>
 
       <div className="dash-stats">
         <Link to="/tenants" className="dash-stat dash-stat-link">
           <span className="dash-stat-value mono">{value(counts?.total)}</span>
-          <span className="dash-stat-label">venues in total</span>
+          <span className="dash-stat-label">tenants in total</span>
         </Link>
         <Link to="/tenants" className="dash-stat dash-stat-link">
           <span className="dash-stat-value mono">{value(counts?.active)}</span>
@@ -63,10 +63,10 @@ export default function Dashboard({ email }) {
 
       <div className="dash-actions">
         <Link to="/tenants/new" className="btn-primary">
-          Create a venue
+          Create a tenant
         </Link>
         <Link to="/tenants" className="btn-ghost">
-          See all venues
+          See all tenants
         </Link>
       </div>
 

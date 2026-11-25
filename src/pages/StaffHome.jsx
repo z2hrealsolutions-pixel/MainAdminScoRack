@@ -17,10 +17,10 @@ export default function StaffHome({ email }) {
 
   return (
     <Shell email={email}>
-      <h1 className="dash-headline">{open.length > 0 ? 'Your venues' : 'Access blocked'}</h1>
+      <h1 className="dash-headline">{open.length > 0 ? 'Your tenants' : 'Access blocked'}</h1>
       {open.length === 0 && (
         <p className="dash-sub">
-          Access to {blocked.length === 1 ? 'your venue' : 'your venues'} has been blocked, so there
+          Access to {blocked.length === 1 ? 'your tenant' : 'your tenants'} has been blocked, so there
           is nothing to open right now. Contact the ScoreIt team if you think this is a mistake.
         </p>
       )}
@@ -41,7 +41,7 @@ export default function StaffHome({ email }) {
             <span className="venue-name">{v.name}</span>
             <span className="venue-meta mono">{v.role}</span>
             <StatusPill status={v.status} />
-            <span className="venue-note">Access to this venue is blocked. Contact the ScoreIt team.</span>
+            <span className="venue-note">Access to this tenant is blocked. Contact the ScoreIt team.</span>
           </div>
         ))}
       </div>
