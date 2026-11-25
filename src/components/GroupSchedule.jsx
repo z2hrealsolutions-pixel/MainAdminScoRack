@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import GroupsImport from './GroupsImport';
+import TeamsPoolsImport from './TeamsPoolsImport';
 
-export default function GroupSchedule({ tenantId, divisionId, divisionName, category, onGenerated }) {
+export default function GroupSchedule({ tenantId, divisionId, divisionName, category, tiebreak = 'classic', onGenerated }) {
   const [groupCount, setGroupCount] = useState(4);
   const [genState, setGenState] = useState('idle'); // idle | generating | error
   const [genError, setGenError] = useState('');
@@ -215,6 +216,18 @@ export default function GroupSchedule({ tenantId, divisionId, divisionName, cate
       {genState === 'error' && <div className="callout-error">{genError}</div>}
 
       {data && (
+        <TeamsPoolsImport
+          divisionId={divisionId}
+          existingTeams={data.allTeams}
+          hasResults={false}
+          onImported={() => {
+            setReloadKey((k) => k + 1);
+            if (onGenerated) onGenerated();
+          }}
+        />
+      )}
+
+      {data && (
         <GroupsImport
           divisionId={divisionId}
           divisionName={divisionName}
@@ -229,8 +242,10 @@ export default function GroupSchedule({ tenantId, divisionId, divisionName, cate
 
       {data && data.groups.length > 0 && (
         <p className="field-hint">
-          Teams are ranked by wins, then head-to-head between the teams level, then point
-          difference, then original seed. A league division is ranked by points first.
+          {tiebreak === 'points'
+            ? 'Teams are ranked by wins, then point difference, then points scored, then head to head, then original seed.'
+            : 'Teams are ranked by wins, then head-to-head between the teams level, then point difference, then original seed.'}{' '}
+          A league division is ranked by points first.
         </p>
       )}
       {data?.groups.length === 0 && (

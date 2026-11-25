@@ -8,6 +8,7 @@ import StatusControl from '../components/StatusControl';
 import DivisionList from '../components/DivisionList';
 import StaffSection from '../components/StaffSection';
 import DeleteTenant from '../components/DeleteTenant';
+import OverrideCodePanel from '../components/OverrideCodePanel';
 import { useVenueAccess } from '../lib/access';
 import { slugify, isValidSlug } from '../lib/slugify';
 import { SPORTS } from '../lib/sports';
@@ -217,6 +218,11 @@ export default function TenantDetail({ email }) {
 
       {access.isOperator && (
         <>
+      <section className="tenant-section">
+        <h2 className="tenant-section-title">Override password</h2>
+        <OverrideCodePanel tenantId={tenantId} />
+      </section>
+
       <section className="tenant-section">
         <h2 className="tenant-section-title">Status</h2>
         <StatusControl

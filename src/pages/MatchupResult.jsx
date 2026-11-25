@@ -4,8 +4,10 @@ import { supabase } from '../supabaseClient';
 import Shell from '../components/Shell';
 import MatchupSchedule from '../components/MatchupSchedule';
 import { RUBBER_TYPES } from '../lib/matchTypes';
+import { readSets, ruleFor, stageKey } from '../lib/matchRules';
 import '../styles/tenants.css';
 import '../styles/bracket.css';
+import '../styles/plan.css';
 
 function toInt(value) {
   return value === '' || value === null ? null : Number(value);
@@ -127,6 +129,8 @@ export default function MatchupResult({ email }) {
   const [division, setDivision] = useState(null);
   const [teamNames, setTeamNames] = useState({});
   const [groupName, setGroupName] = useState(null);
+  const [groupInfo, setGroupInfo] = useState(null);
+  const [setRows, setSetRows] = useState([]);
   const [subs, setSubs] = useState([]);
   const [loadError, setLoadError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
@@ -150,10 +154,10 @@ export default function MatchupResult({ email }) {
         return;
       }
       const m = matchupRes.data;
-      const [divRes, teamsRes, subsRes, groupRes] = await Promise.all([
+      const [divRes, teamsRes, subsRes, groupRes, setsRes] = await Promise.all([
         supabase
           .from('divisions')
-          .select('id, name, category, group_win_points')
+          .select('id, name, category, group_win_points, match_rules')
           .eq('id', m.division_id)
           .single(),
         supabase
@@ -166,8 +170,13 @@ export default function MatchupResult({ email }) {
           .eq('matchup_id', matchupId)
           .order('slot_number'),
         m.group_id
-          ? supabase.from('groups').select('name').eq('id', m.group_id).maybeSingle()
+          ? supabase.from('groups').select('name, is_playoff').eq('id', m.group_id).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
+        supabase
+          .from('match_sets')
+          .select('set_number, team_a_score, team_b_score, done')
+          .eq('matchup_id', matchupId)
+          .order('set_number'),
       ]);
       if (!isMounted) return;
       const err = divRes.error || teamsRes.error || subsRes.error;
@@ -181,6 +190,15 @@ export default function MatchupResult({ email }) {
       });
       setMatchup(m);
       setGroupName(groupRes.data?.name ?? null);
+      setGroupInfo(groupRes.data ?? null);
+      // the sets table comes with the newer database, without it a match is one game as before
+      const loadedSets = setsRes.error ? [] : setsRes.data;
+      setSetRows(
+        Array.from({ length: 5 }, (_, i) => {
+          const row = loadedSets.find((x) => x.set_number === i + 1);
+          return { a: row ? String(row.team_a_score) : '', b: row ? String(row.team_b_score) : '' };
+        })
+      );
       setDivision(divRes.data);
       setTeamNames(names);
       setSubs(subsRes.data);
@@ -210,6 +228,26 @@ export default function MatchupResult({ email }) {
     reload();
   }
 
+  // a walkover is written as a full score to nil, which counts in the point difference like any other win
+  function walkover(side) {
+    const target = (ruleFor(division && division.match_rules, stageKey(matchup, groupInfo)).target) || 11;
+    const label = side === 'a' ? nameA : nameB;
+    if (!window.confirm(`Record a walkover win for ${label}? It is saved as ${target}-0${setMatch ? ' in each set' : ''}.`)) return;
+    if (setMatch) {
+      const need = rule.sets_to_win;
+      run('admin_record_sets', {
+        p_matchup_id: matchupId,
+        p_sets: Array.from({ length: need }, () => (side === 'a' ? [target, 0] : [0, target])),
+      });
+      return;
+    }
+    run('record_match_result', {
+      p_matchup_id: matchupId,
+      p_team_a_score: side === 'a' ? target : 0,
+      p_team_b_score: side === 'a' ? 0 : target,
+    });
+  }
+
   if (loadError) {
     return (
       <Shell email={email}>
@@ -236,6 +274,11 @@ export default function MatchupResult({ email }) {
     subs
       .filter((s) => s.done && s.winner_team_id === teamId)
       .reduce((sum, s) => sum + s.points_value, 0);
+
+  const rule = ruleFor(division.match_rules, stageKey(matchup, groupInfo));
+  const setMatch = !isLeague && !isGroupMatch && rule.best_of > 1;
+  const setRead = setMatch ? readSets(setRows.slice(0, rule.best_of), rule) : null;
+  const walkoverPoints = rule.target || 11;
 
   const canSaveScore =
     scoreA !== '' &&
@@ -279,6 +322,40 @@ export default function MatchupResult({ email }) {
                 } in this division.`
               : 'Saving puts the winner into the next round. Correcting the winner swaps them there, unless the next match has already started.'}
           </p>
+          {setMatch && (
+            <div className="set-entry">
+              <p className="field-hint">
+                {nameA} and {nameB} play best of {rule.best_of} sets
+                {rule.target ? `, each set to ${rule.target}${rule.win_by > 1 ? `, win by ${rule.win_by}` : ''}` : ''}. Fill in the
+                sets that were played, in order. The winner goes into the next round.
+              </p>
+              <div className="set-entry-grid">
+                <span className="rules-head" />
+                <span className="rules-head">{nameA}</span>
+                <span className="rules-head">{nameB}</span>
+                {setRows.slice(0, rule.best_of).map((row, i) => (
+                  <SetInputs
+                    key={i}
+                    n={i + 1}
+                    row={row}
+                    onChange={(next) => setSetRows((rows) => rows.map((x, j) => (j === i ? next : x)))}
+                  />
+                ))}
+              </div>
+              <p className="rubber-tally mono">
+                Sets: {nameA} {setRead.a} - {setRead.b} {nameB}
+              </p>
+              {setRead.notes.map((note) => (
+                <p key={note} className="field-hint">
+                  {note}
+                </p>
+              ))}
+              {!setRead.decided && setRead.sets.length > 0 && (
+                <p className="field-hint">These sets do not decide the match yet: a side needs {rule.sets_to_win} sets.</p>
+              )}
+            </div>
+          )}
+          {!setMatch && (<>
           <div className="result-score-row">
             <div>
               <label className="field-label" htmlFor="scoreA">
@@ -305,20 +382,43 @@ export default function MatchupResult({ email }) {
               />
             </div>
           </div>
+          </>)}
           <div className="roster-actions" style={{ marginTop: 'var(--space-3)' }}>
             <button
               type="button"
               className="btn-primary"
-              disabled={!canSaveScore || busy}
-              onClick={() =>
+              disabled={(setMatch ? !(setRead.decided && setRead.notes.every((x) => !x.includes('needs both') && !x.includes('level') && !x.includes('already decided'))) : !canSaveScore) || busy}
+              onClick={() => {
+                if (setMatch) {
+                  const unfinished = setRead.notes.find((x) => x.includes('not a finished set'));
+                  if (unfinished && !window.confirm(`${unfinished}. Save these scores anyway?`)) return;
+                  run('admin_record_sets', { p_matchup_id: matchupId, p_sets: setRead.sets });
+                  return;
+                }
                 run('record_match_result', {
                   p_matchup_id: matchupId,
                   p_team_a_score: Number(scoreA),
                   p_team_b_score: Number(scoreB),
-                })
-              }
+                });
+              }}
             >
               {isComplete ? 'Update result' : 'Save result'}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              disabled={busy || !matchup.team_a_id || !matchup.team_b_id}
+              onClick={() => walkover('a')}
+            >
+              Walkover to {nameA}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              disabled={busy || !matchup.team_a_id || !matchup.team_b_id}
+              onClick={() => walkover('b')}
+            >
+              Walkover to {nameB}
             </button>
             {(isComplete || matchup.status === 'live') && (
               <button
@@ -433,5 +533,27 @@ export default function MatchupResult({ email }) {
         </p>
       </section>
     </Shell>
+  );
+}
+
+function SetInputs({ n, row, onChange }) {
+  return (
+    <>
+      <span className="set-entry-n mono">Set {n}</span>
+      <input
+        className="text-input"
+        inputMode="numeric"
+        aria-label={`Set ${n} first team`}
+        value={row.a}
+        onChange={(e) => onChange({ ...row, a: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+      />
+      <input
+        className="text-input"
+        inputMode="numeric"
+        aria-label={`Set ${n} second team`}
+        value={row.b}
+        onChange={(e) => onChange({ ...row, b: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+      />
+    </>
   );
 }

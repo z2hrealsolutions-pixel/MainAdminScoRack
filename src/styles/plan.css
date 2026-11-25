@@ -1,0 +1,136 @@
+/* scoring rules and the knockout plan */
+.rules-panel,
+.plan-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+.rules-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.4fr) repeat(3, minmax(90px, 1fr));
+  gap: 8px 12px;
+  align-items: center;
+}
+.rules-head {
+  font-size: 12px;
+  color: var(--mist-dim, #8aa0b2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rules-stage {
+  font-weight: 600;
+}
+.rules-num {
+  width: 100%;
+}
+.rules-fixed {
+  color: var(--mist-dim, #8aa0b2);
+}
+.rules-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rules-tiebreak {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.rules-now {
+  margin: 0;
+}
+.plan-round {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plan-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft, #2d4151);
+  border-radius: 12px;
+}
+.plan-tag {
+  min-width: 48px;
+  font-weight: 700;
+}
+.plan-slotwrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.plan-slot {
+  width: 100%;
+  min-width: 0;
+}
+.plan-v {
+  color: var(--mist-dim, #8aa0b2);
+}
+.plan-why {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--mist-dim, #8aa0b2);
+}
+.plan-note,
+.plan-warn,
+.plan-lock,
+.plan-done {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft, #2d4151);
+  font-size: 14px;
+}
+.plan-warn {
+  border-color: #c98a1a;
+}
+.plan-lock {
+  border-color: #c98a1a;
+}
+.plan-lock-title {
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.plan-code {
+  max-width: 280px;
+}
+.plan-blanks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.plan-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+@media (max-width: 640px) {
+  .rules-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .rules-head {
+    display: none;
+  }
+  .rules-stage {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
+}
+
+/* set by set result entry */
+.set-entry-grid {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+  max-width: 460px;
+}
+.set-entry-n {
+  color: var(--mist-dim, #8aa0b2);
+}

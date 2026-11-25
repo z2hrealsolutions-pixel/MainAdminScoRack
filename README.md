@@ -518,3 +518,17 @@ The console has a Light / Dark / Auto switch in the top bar. "Auto" follows the 
 - `themeTokens.test.mjs` measures the contrast of the token pairs in both themes (text 4.5:1, big numerals and borders 3:1).
   Change a colour and the test says which pair stopped reading.
 - The sign-in page follows the device; it has no switch.
+
+## Phase 2g: scoring rules, knockout planner, override password (Dinking Divas build)
+
+Needs `scorack_phase1s_rules.sql` applied first.
+
+- **Scoring rules** (division page): points to win, win by (no upper cap), one game or best of 3/5 sets for each stage,
+  the pool tie-break (wins, point difference, points scored, then head to head, or the older head-to-head first order),
+  and six ready made formats (Playful, Precision, Power, Timeless, Solo, Rising Divas).
+- **Knockout planner**: worked out from the pool tables and the division's format, every place changeable by hand
+  (which 3rd placed team goes where, quarter finals or not, later pairings). A pool rematch in round one is swapped
+  automatically and flagged. A knockout that has been played can only be changed with the venue's override password.
+- **Override password**: set per venue by a ScoreIt operator on the venue page. Stored scrambled, 5 wrong tries lock it for 10 minutes.
+- **Match page**: set by set result entry for best of 3 matches, and walkover buttons (saved as full score to nil).
+- **Teams and pools in one file**: `team_name,group_name`, doubles written "Name / Name". Creates the teams and the pools.

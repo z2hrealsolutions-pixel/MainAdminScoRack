@@ -88,5 +88,14 @@ check('no rows is not ok', !matchGroups([], teams).ok);
   check('template file names are tidy', groupsFileName("Men's Singles 3.0+") === 'men-s-singles-3-0-groups-template.csv' && groupsFileName('') === 'division-groups-template.csv');
 }
 
+
+// doubles team names: always "Name / Name", whatever spacing the file used
+{
+  const p = parseGroupsCsv('team_name,group_name\nAsha/Mira,Pool A\nNila  /  Sue,Pool A\n');
+  check('a slash in a team name is written with spaces around it', p.rows[0].team_name === 'Asha / Mira' && p.rows[1].team_name === 'Nila / Sue');
+  const m = matchGroups(p.rows, [{ id: '1', name: 'Asha/Mira' }, { id: '2', name: 'Nila / Sue' }]);
+  check('a team is found whichever way its slash was spaced', m.ok && m.groups[0].teams.length === 2);
+}
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { sizesDiffer } from '../lib/bracketChoice';
 import BracketView from './BracketView';
 import CustomBracketPanel from './CustomBracketPanel';
+import KnockoutPlanPanel from './KnockoutPlanPanel';
 import R16Panel from './R16Panel';
 
 // The knockout stage of a division that plays groups first. There are three ways to build it:
@@ -57,7 +58,7 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
   // where to start: a playoff only exists in the seeded format, groups of different sizes need a number
   // chosen for each group, and anything else keeps the builder it always had
   const unequal = hasGroups && sizesDiffer(info.groups);
-  const chosen = mode || (r16 && status.playoff_exists ? 'seeded' : unequal ? 'custom' : 'cross');
+  const chosen = mode || (r16 && status.playoff_exists ? 'seeded' : division.knockout_template ? 'plan' : unequal ? 'custom' : 'cross');
 
   if (!hasGroups) {
     return <BracketView tenantId={tenantId} divisionId={divisionId} format={division.format_type} />;
@@ -71,6 +72,14 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
   return (
     <div>
       <div className="mode-choice" role="radiogroup" aria-label="How to build the knockout">
+        <label className={`mode-card ${chosen === 'plan' ? 'mode-card-on' : ''}`}>
+          <input type="radio" name="koMode" checked={chosen === 'plan'} onChange={() => setMode('plan')} />
+          <span className="mode-title">Plan it (recommended)</span>
+          <span className="mode-hint">
+            Who plays whom, following the division's format, with every place changeable by hand: which 3rd placed team goes
+            where, whether there are quarter finals, who meets in the later rounds.
+          </span>
+        </label>
         <label className={`mode-card ${chosen === 'cross' ? 'mode-card-on' : ''}`}>
           <input type="radio" name="koMode" checked={chosen === 'cross'} onChange={() => setMode('cross')} />
           <span className="mode-title">Cross-group bracket</span>
@@ -98,6 +107,16 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
         )}
       </div>
 
+      {chosen === 'plan' && (
+        <KnockoutPlanPanel
+          tenantId={tenantId}
+          divisionId={divisionId}
+          division={division}
+          groups={info.groups}
+          knockout={info.knockout}
+          onChanged={refresh}
+        />
+      )}
       {chosen === 'seeded' && <R16Panel tenantId={tenantId} divisionId={divisionId} onChanged={refresh} />}
       {chosen === 'custom' && (
         <CustomBracketPanel
@@ -113,7 +132,7 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
         tenantId={tenantId}
         divisionId={divisionId}
         format={division.format_type}
-        hideGenerate={chosen === 'seeded' || chosen === 'custom'}
+        hideGenerate={chosen === 'seeded' || chosen === 'custom' || chosen === 'plan'}
       />
     </div>
   );

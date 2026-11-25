@@ -8,12 +8,17 @@ import StatusControl from '../components/StatusControl';
 import RosterSection from '../components/RosterSection';
 import GroupSchedule from '../components/GroupSchedule';
 import KnockoutSection from '../components/KnockoutSection';
+import RulesPanel from '../components/RulesPanel';
 import DuprExport from '../components/DuprExport';
 import DeleteDivision from '../components/DeleteDivision';
 import RefereeCodes from '../components/RefereeCodes';
 import { CATEGORIES, FORMATS } from '../lib/divisions';
 import '../styles/tenants.css';
 import '../styles/bracket.css';
+import '../styles/plan.css';
+
+const DIVISION_COLS =
+  'id, name, category, format_type, age_label, gender_label, status, group_win_points, tiebreak_mode, match_rules, knockout_template';
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft', hint: 'Hidden from the public, even if the tenant is active.' },
@@ -36,7 +41,7 @@ export default function DivisionDetail({ email }) {
     let isMounted = true;
     supabase
       .from('divisions')
-      .select('id, name, category, format_type, age_label, gender_label, status, group_win_points')
+      .select(DIVISION_COLS)
       .eq('id', divisionId)
       .single()
       .then(({ data, error }) => {
@@ -70,6 +75,11 @@ export default function DivisionDetail({ email }) {
       form.age_label !== (division.age_label ?? '') ||
       form.group_win_points !== String(division.group_win_points));
 
+  async function reloadDivision() {
+    const { data } = await supabase.from('divisions').select(DIVISION_COLS).eq('id', divisionId).single();
+    if (data) setDivision(data);
+  }
+
   async function handleSave(event) {
     event.preventDefault();
     setSaveState('saving');
@@ -86,7 +96,7 @@ export default function DivisionDetail({ email }) {
         group_win_points: Number(form.group_win_points),
       })
       .eq('id', divisionId)
-      .select('id, name, category, format_type, age_label, gender_label, status, group_win_points')
+      .select(DIVISION_COLS)
       .single();
 
     if (error) {
@@ -103,7 +113,7 @@ export default function DivisionDetail({ email }) {
       .from('divisions')
       .update({ status: nextStatus })
       .eq('id', divisionId)
-      .select('id, name, category, format_type, age_label, gender_label, status, group_win_points')
+      .select(DIVISION_COLS)
       .single();
 
     if (error) {
@@ -169,6 +179,7 @@ export default function DivisionDetail({ email }) {
           { id: 'sec-status', label: 'Status' },
           { id: 'sec-details', label: 'Details' },
           { id: 'sec-teams', label: 'Teams' },
+          { id: 'sec-rules', label: 'Scoring rules' },
           { id: 'sec-seeding', label: 'Seeding' },
           ...(division.format_type === 'group_then_knockout' ? [{ id: 'sec-groups', label: 'Groups' }] : []),
           { id: 'sec-bracket', label: 'Bracket' },
@@ -312,6 +323,11 @@ export default function DivisionDetail({ email }) {
         />
       </section>
 
+      <section id="sec-rules" className="tenant-section">
+        <h2 className="tenant-section-title">Scoring rules</h2>
+        <RulesPanel tenantId={tenantId} divisionId={divisionId} division={division} onSaved={reloadDivision} />
+      </section>
+
       <section id="sec-seeding" className="tenant-section">
         <h2 className="tenant-section-title">Seeding</h2>
         <p className="dash-sub" style={{ marginBottom: 'var(--space-3)' }}>
@@ -347,6 +363,7 @@ export default function DivisionDetail({ email }) {
             divisionId={divisionId}
             divisionName={division.name}
             category={division.category}
+            tiebreak={division.tiebreak_mode}
           />
         </section>
       )}

@@ -9,8 +9,9 @@ export const GROUPS_COLUMNS = ['team_name', 'group_name'];
 export const MAX_GROUP_NAME = 40;
 
 // "Ann  Silva", "ann silva " and "ANN SILVA" are the same team
-const key = (v) => String(v || '').trim().replace(/\s+/g, ' ').toLowerCase();
-const tidy = (v) => String(v || '').trim().replace(/\s+/g, ' ');
+// and "Ann/Bo" is "Ann / Bo": a doubles team is always written with a spaced slash
+const tidy = (v) => String(v || '').trim().replace(/\s*\/\s*/g, ' / ').replace(/\s+/g, ' ');
+const key = (v) => tidy(v).toLowerCase();
 
 function headerName(h) {
   const k = String(h || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
