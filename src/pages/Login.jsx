@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { consoleUrl } from '../lib/consoleUrl';
+import { ownSignInUrl } from '../lib/consoleUrl';
 import '../styles/login.css';
 import Brand from '../components/Brand';
 
@@ -17,7 +17,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: consoleUrl(),
+        emailRedirectTo: ownSignInUrl(),
       },
     });
 

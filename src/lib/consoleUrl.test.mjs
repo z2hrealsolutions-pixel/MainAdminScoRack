@@ -1,4 +1,4 @@
-import { isOwnDomain, pickConsoleUrl, pickTenantConsoleUrl } from './consoleUrl.js';
+import { isOwnDomain, isPreviewHost, pickConsoleUrl, pickTenantConsoleUrl } from './consoleUrl.js';
 
 let passed = 0, failed = 0;
 const check = (label, ok, extra) => { if (ok) { passed++; console.log('PASS:', label); } else { failed++; console.log('FAIL:', label, extra ?? ''); } };
@@ -35,6 +35,11 @@ check('on local development the address set by hand is still used', pickConsoleU
 check('the tenant address is VITE_RENT_URL when set', pickTenantConsoleUrl({ rent: 'https://rent.scoreit.today/', console: 'https://admin.scoreit.today' }) === 'https://rent.scoreit.today');
 check('a tenant address without https:// gets one', pickTenantConsoleUrl({ rent: 'rent.scoreit.today', console: 'x' }) === 'https://rent.scoreit.today');
 check('with no tenant address set, invitations point at the console\'s own address', pickTenantConsoleUrl({ rent: '', console: 'https://admin.scoreit.today' }) === 'https://admin.scoreit.today' && pickTenantConsoleUrl({ console: 'https://c.test' }) === 'https://c.test');
+
+check('a branch preview address is a preview', isPreviewHost('main-admin-sco-rack-git-scoreit-rules-112e4f-z2hxrealsolutions.vercel.app'));
+check('a one-deployment address is a preview', isPreviewHost('main-admin-sco-rack-6ypgpwx8w-z2hxrealsolutions.vercel.app'));
+check('the production vercel addresses and own domains are not previews',
+  !isPreviewHost('main-admin-sco-rack.vercel.app') && !isPreviewHost('main-admin-sco-rack-z2hxrealsolutions.vercel.app') && !isPreviewHost('admin.scoreit.today') && !isPreviewHost('localhost'));
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

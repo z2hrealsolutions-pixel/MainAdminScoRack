@@ -59,3 +59,16 @@ export function pickTenantConsoleUrl({ rent, console: own }) {
 export function tenantConsoleUrl() {
   return pickTenantConsoleUrl({ rent: import.meta.env.VITE_RENT_URL, console: consoleUrl() });
 }
+
+// A preview build of the console (a branch or one deployment, never the production address). Whoever
+// signs in there is testing it, so their own sign-in link comes back to the same preview instead of
+// jumping to the live console. Links sent to OTHER people never use this.
+export function isPreviewHost(hostname) {
+  const h = String(hostname || '').toLowerCase();
+  if (!h.endsWith('.vercel.app')) return false;
+  return /-git-/.test(h) || /-[a-z0-9]{9}-[a-z0-9-]+\.vercel\.app$/.test(h);
+}
+
+export function ownSignInUrl() {
+  return isPreviewHost(window.location.hostname) ? window.location.origin : consoleUrl();
+}
