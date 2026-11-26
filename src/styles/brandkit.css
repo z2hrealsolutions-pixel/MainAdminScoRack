@@ -203,9 +203,9 @@
 
 .bp-plate img {
   display: block;
-  height: 22px;
+  height: 30px;
   width: auto;
-  max-width: 90px;
+  max-width: 120px;
   object-fit: contain;
 }
 

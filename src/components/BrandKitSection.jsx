@@ -312,7 +312,7 @@ export default function BrandKitSection({ tenantId, tenantName }) {
             <PictureField
               id="logo"
               label="Logo"
-              hint="Shown next to the tenant's name, on a white plate. PNG, JPG or WebP. A wide picture with a clear background works best."
+              hint="Shown next to the tenant's name at the top of every live, referee and TV page, on a white plate. PNG, JPG or WebP. A wide picture with a clear background works best."
               savedUrl={savedLogo}
               pendingUrl={logo && logo.url}
               removed={logoGone}
@@ -328,7 +328,7 @@ export default function BrandKitSection({ tenantId, tenantName }) {
             <PictureField
               id="banner"
               label="Banner image"
-              hint="Shown across the top of the live page. About 1800 × 600 (three times wider than tall). The edges may be trimmed on a phone."
+              hint="Shown across the top of the live page, as a strip on the TV board while matches are on, and large on the TV board between matches. About 1800 × 600 (three times wider than tall). Keep the important part (text, faces) in the middle: the edges are trimmed on a phone and on the TV."
               savedUrl={savedBanner}
               pendingUrl={banner && banner.url}
               removed={bannerGone}
