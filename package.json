@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node src/lib/consoleUrl.test.mjs && node src/lib/duprCsv.test.mjs && node src/lib/groupsCsv.test.mjs && node src/lib/csv.test.mjs && node src/lib/layout.test.mjs && node src/lib/brand.test.mjs && node src/lib/addresses.test.mjs && node src/lib/bracketChoice.test.mjs && node src/lib/responsive.test.mjs && node src/lib/theme.test.mjs && node src/lib/themeTokens.test.mjs && node src/lib/themeScript.test.mjs && node src/lib/styleRules.test.mjs && node src/lib/knockoutPlan.test.mjs && node src/lib/matchRules.test.mjs"
+    "test": "node src/lib/consoleUrl.test.mjs && node src/lib/duprCsv.test.mjs && node src/lib/groupsCsv.test.mjs && node src/lib/csv.test.mjs && node src/lib/layout.test.mjs && node src/lib/brand.test.mjs && node src/lib/addresses.test.mjs && node src/lib/bracketChoice.test.mjs && node src/lib/responsive.test.mjs && node src/lib/theme.test.mjs && node src/lib/themeTokens.test.mjs && node src/lib/themeScript.test.mjs && node src/lib/styleRules.test.mjs && node src/lib/knockoutPlan.test.mjs && node src/lib/matchRules.test.mjs && node src/lib/teamRename.test.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.1.0",

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Shell from '../components/Shell';
+import { useVenueAccess } from '../lib/access';
+import { renameErrorText } from '../lib/teamRename';
 import '../styles/tenants.css';
 import '../styles/roster.css';
 
@@ -90,6 +92,7 @@ function PlayerRow({ player, onSaved, onRemoved }) {
 
 export default function TeamDetail({ email }) {
   const { tenantId, divisionId, teamId } = useParams();
+  const access = useVenueAccess(tenantId);
   const [team, setTeam] = useState(null);
   const [division, setDivision] = useState(null);
   const [players, setPlayers] = useState(null);
@@ -97,6 +100,14 @@ export default function TeamDetail({ email }) {
   const [form, setForm] = useState(null);
   const [saveState, setSaveState] = useState('idle');
   const [saveError, setSaveError] = useState('');
+
+  // changing the name: free until the bracket exists, then it needs the override password
+  const [newName, setNewName] = useState('');
+  const [needsCode, setNeedsCode] = useState(false);
+  const [code, setCode] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState('');
+  const [renamed, setRenamed] = useState(false);
 
   const [newPlayer, setNewPlayer] = useState({ name: '', gender: 'M', dupr_rating: '' });
   const [addingPlayer, setAddingPlayer] = useState(false);
@@ -123,6 +134,10 @@ export default function TeamDetail({ email }) {
         return;
       }
 
+      const need = await supabase.rpc('team_rename_needs_code', { p_team_id: teamId });
+      if (!isMounted) return;
+      setNeedsCode(need.data === true);
+      setNewName(teamRes.data.name);
       setTeam(teamRes.data);
       setDivision(divisionRes.data);
       setPlayers(playersRes.data);
@@ -141,8 +156,7 @@ export default function TeamDetail({ email }) {
   const hasChanges =
     team &&
     form &&
-    (form.name !== team.name ||
-      form.captain_name !== (team.captain_name ?? '') ||
+    (form.captain_name !== (team.captain_name ?? '') ||
       String(form.seed) !== String(team.seed ?? ''));
 
   async function handleSave(event) {
@@ -153,7 +167,6 @@ export default function TeamDetail({ email }) {
     const { data, error } = await supabase
       .from('teams')
       .update({
-        name: form.name.trim(),
         captain_name: form.captain_name.trim() || null,
         seed: form.seed === '' ? null : Number(form.seed),
       })
@@ -168,6 +181,31 @@ export default function TeamDetail({ email }) {
     }
     setTeam(data);
     setSaveState('saved');
+  }
+
+  async function handleRename(event) {
+    event.preventDefault();
+    setRenaming(true);
+    setRenameError('');
+    setRenamed(false);
+    const { data, error } = await supabase.rpc('rename_team', {
+      p_team_id: teamId,
+      p_name: newName,
+      p_override_code: needsCode ? code : null,
+    });
+    setRenaming(false);
+    if (error) {
+      setRenameError(error.message);
+      return;
+    }
+    if (!data?.ok) {
+      setRenameError(renameErrorText(data));
+      return;
+    }
+    setTeam((prev) => ({ ...prev, name: data.name }));
+    setNewName(data.name);
+    setCode('');
+    setRenamed(true);
   }
 
   async function handleAddPlayer(event) {
@@ -220,19 +258,61 @@ export default function TeamDetail({ email }) {
       <h1 className="dash-headline">{team.name}</h1>
 
       <section className="tenant-section" style={{ marginTop: 'var(--space-4)' }}>
+        <h2 className="tenant-section-title">Team name</h2>
+        {access.isOwner ? (
+          <form onSubmit={handleRename} className="tenant-form roster-form">
+            <div>
+              <label className="field-label" htmlFor="newName">
+                Name
+              </label>
+              <input
+                id="newName"
+                className="text-input"
+                value={newName}
+                onChange={(event) => {
+                  setNewName(event.target.value);
+                  setRenamed(false);
+                }}
+              />
+              <p className="field-hint">
+                {needsCode
+                  ? 'The bracket has been created, so changing a name needs this tenant\u2019s override password.'
+                  : 'You can fix spellings freely until the bracket is created. After that a name change needs the override password.'}
+              </p>
+            </div>
+            {needsCode && (
+              <div>
+                <label className="field-label" htmlFor="renameCode">
+                  Override password
+                </label>
+                <input
+                  id="renameCode"
+                  type="password"
+                  autoComplete="off"
+                  className="text-input"
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                />
+              </div>
+            )}
+            {renameError && <div className="callout-error" role="alert">{renameError}</div>}
+            {renamed && <p className="field-hint">Name changed.</p>}
+            <button
+              type="submit"
+              className="btn-primary tenant-form-submit"
+              disabled={renaming || !newName.trim() || newName.trim() === team.name || (needsCode && !code)}
+            >
+              {renaming ? 'Changing\u2026' : 'Change name'}
+            </button>
+          </form>
+        ) : (
+          <p className="field-hint">Only an owner of the tenant can change a team name.</p>
+        )}
+      </section>
+
+      <section className="tenant-section">
         <h2 className="tenant-section-title">Team details</h2>
         <form onSubmit={handleSave} className="tenant-form roster-form">
-          <div>
-            <label className="field-label" htmlFor="name">
-              Name
-            </label>
-            <input
-              id="name"
-              className="text-input"
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-            />
-          </div>
           <div className="roster-field-row">
             <div>
               <label className="field-label" htmlFor="captain">
