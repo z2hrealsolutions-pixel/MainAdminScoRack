@@ -4,6 +4,7 @@ import { sizesDiffer } from '../lib/bracketChoice';
 import BracketView from './BracketView';
 import CustomBracketPanel from './CustomBracketPanel';
 import KnockoutPlanPanel from './KnockoutPlanPanel';
+import KnockoutTree from './KnockoutTree';
 import R16Panel from './R16Panel';
 
 // The knockout stage of a division that plays groups first. There are three ways to build it:
@@ -69,8 +70,15 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
     loadInfo();
   };
 
+  const exists = info.knockout.exists;
+
   return (
     <div>
+      <KnockoutTree tenantId={tenantId} divisionId={divisionId} division={division} refreshKey={bracketKey} />
+
+      <details className="tool-fold" open={!exists}>
+      <summary>{exists ? 'Change or rebuild the bracket' : 'Build the bracket'}</summary>
+      <div className="tool-fold-body">
       <details className="tool-fold" open={chosen !== 'plan'}>
       <summary>Other ways to build the bracket</summary>
       <div className="tool-fold-body">
@@ -132,13 +140,21 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
           onChanged={refresh}
         />
       )}
+      </div>
+      </details>
+
+      <details className="tool-fold">
+        <summary>Declare a winner by hand</summary>
+        <div className="tool-fold-body">
       <BracketView
         key={bracketKey}
         tenantId={tenantId}
         divisionId={divisionId}
         format={division.format_type}
-        hideGenerate={chosen === 'seeded' || chosen === 'custom' || chosen === 'plan'}
+        hideGenerate
       />
+        </div>
+      </details>
     </div>
   );
 }
