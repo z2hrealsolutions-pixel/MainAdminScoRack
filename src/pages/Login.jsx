@@ -6,23 +6,14 @@ import Brand from '../components/Brand';
 import { pickLoginMode, passwordErrorMessage } from '../lib/loginMode';
 
 export default function Login() {
-  const mode = pickLoginMode(window.location.hostname);
-  // on an address that shows both, the person picks; otherwise the address decides
-  const [tab, setTab] = useState('admin');
-  const which = mode === 'both' ? tab : mode;
+  // the address decides the door: rent.* is the tenants' door (email link), everything else is the ScoreIt team's (password)
+  const which = pickLoginMode(window.location.hostname);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [errorMessage, setErrorMessage] = useState('');
-
-  function pickTab(next) {
-    setTab(next);
-    setStatus('idle');
-    setErrorMessage('');
-    setPassword('');
-  }
 
   async function handleLink(event) {
     event.preventDefault();
@@ -90,29 +81,6 @@ export default function Login() {
         </div>
 
         <h1 className="login-headline">Sign in</h1>
-
-        {mode === 'both' && (
-          <div className="login-tabs" role="tablist" aria-label="Who is signing in">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'admin'}
-              className={`login-tab${tab === 'admin' ? ' login-tab-on' : ''}`}
-              onClick={() => pickTab('admin')}
-            >
-              ScoreIt admin
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'rent'}
-              className={`login-tab${tab === 'rent' ? ' login-tab-on' : ''}`}
-              onClick={() => pickTab('rent')}
-            >
-              Tenant organiser
-            </button>
-          </div>
-        )}
 
         {which === 'admin' ? (
           <>

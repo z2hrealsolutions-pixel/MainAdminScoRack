@@ -4,6 +4,8 @@ import { supabase } from './supabaseClient';
 import { AccessContext } from './lib/access';
 import Login from './pages/Login';
 import NotAuthorized from './pages/NotAuthorized';
+import WrongDoor from './pages/WrongDoor';
+import { pickLoginMode, wrongDoor } from './lib/loginMode';
 import Dashboard from './pages/Dashboard';
 import StaffHome from './pages/StaffHome';
 import TenantList from './pages/TenantList';
@@ -91,6 +93,10 @@ export default function App() {
   }
 
   const email = session?.user?.email;
+
+  // each address is one door: admin.* (and every other address) for the ScoreIt team, rent.* for tenants and staff
+  const turnedAway = wrongDoor(pickLoginMode(window.location.hostname), access.isOperator);
+  if (turnedAway) return <WrongDoor kind={turnedAway} email={email} />;
 
   return (
     <AccessContext.Provider value={access}>
