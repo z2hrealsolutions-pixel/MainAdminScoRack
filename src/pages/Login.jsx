@@ -4,6 +4,7 @@ import { ownSignInUrl } from '../lib/consoleUrl';
 import '../styles/login.css';
 import Brand from '../components/Brand';
 import { pickLoginMode, passwordErrorMessage } from '../lib/loginMode';
+import { noAccessMessage, linkErrorMessage, sentMessage } from '../lib/rentLogin';
 
 export default function Login() {
   // the address decides the door: rent.* is the tenants' door (email link), everything else is the ScoreIt team's (password)
@@ -12,6 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [events, setEvents] = useState([]);
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -20,8 +22,24 @@ export default function Login() {
     setStatus('sending');
     setErrorMessage('');
 
+    const address = email.trim();
+
+    // first: does this email already have access to an event? (given by the ScoreIt team or by the event's owner)
+    const check = await supabase.rpc('rent_login_check', { p_email: address });
+    if (check.error || !check.data) {
+      setStatus('error');
+      setErrorMessage((check.error && check.error.message) || 'Could not check this email. Try again.');
+      return;
+    }
+    if (!check.data.ok) {
+      setStatus('error');
+      setErrorMessage(noAccessMessage(check.data.error));
+      return;
+    }
+
+    // it has: send the one-time link that opens the event
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
+      email: address,
       options: {
         emailRedirectTo: ownSignInUrl(),
         // an account is made by an invitation, never by asking for a link
@@ -31,14 +49,10 @@ export default function Login() {
 
     if (error) {
       setStatus('error');
-      // the same words whether or not the address has an account, so the page does not tell a stranger which addresses exist
-      setErrorMessage(
-        /signups not allowed|user not found/i.test(error.message)
-          ? 'If that address has been invited, a link is on its way.'
-          : error.message
-      );
+      setErrorMessage(linkErrorMessage(error));
       return;
     }
+    setEvents(check.data.events || []);
     setStatus('sent');
   }
 
@@ -80,7 +94,7 @@ export default function Login() {
           <Brand />
         </div>
 
-        <h1 className="login-headline">Sign in</h1>
+        <h1 className="login-headline">{which === 'rent' ? 'Log in' : 'Sign in'}</h1>
 
         {which === 'admin' ? (
           <>
@@ -138,17 +152,18 @@ export default function Login() {
         ) : (
           <>
             <p className="login-sub">
-              For tenant owners and staff. Enter the email address you were invited with and we'll send you a
-              link, no password needed.
+              For tenant owners and staff. Enter the email address that was given access to your event and
+              we'll email you a one-time link that opens it. No password needed.
             </p>
 
             {status === 'sent' ? (
               <div className="login-sent">
-                <p>
-                  If <strong>{email}</strong> has been invited, a link is on its way. It can take a minute and
-                  may land in spam. Links expire after an hour, ask for a new one if yours has. If nothing ever
-                  arrives, tell whoever invited you.
-                </p>
+                {sentMessage(events, email.trim()).found && (
+                  <p>
+                    <strong>{sentMessage(events, email.trim()).found}</strong>
+                  </p>
+                )}
+                <p>{sentMessage(events, email.trim()).body} If nothing arrives, tell whoever gave you access.</p>
                 <button type="button" className="btn-ghost" onClick={() => setStatus('idle')}>
                   Use a different email
                 </button>
@@ -176,14 +191,13 @@ export default function Login() {
                 )}
 
                 <button type="submit" className="btn-primary" disabled={status === 'sending'}>
-                  {status === 'sending' ? 'Sending link…' : 'Send access link'}
+                  {status === 'sending' ? 'Checking…' : 'Log in to your event'}
                 </button>
               </form>
             )}
 
             <p className="login-footnote">
-              Use the exact email address you were invited with. If you haven't been invited yet, ask whoever
-              runs your tenant's ScoreIt account.
+              Access is given by the event owner or the ScoreIt team.
             </p>
           </>
         )}
