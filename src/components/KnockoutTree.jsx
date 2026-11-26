@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useVenueAccess } from '../lib/access';
-import { treeFromMatchups, treeFromTemplate, slotErrorText } from '../lib/bracketTree';
+import { treeFromMatchups, treeFromTemplate, slotErrorText, declareErrorText } from '../lib/bracketTree';
 
 function when(iso) {
   const d = new Date(iso);
@@ -28,11 +28,17 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [declaring, setDeclaring] = useState(null); // match id
+  const [winnerPick, setWinnerPick] = useState('');
+  const [reason, setReason] = useState('');
+  const [declCode, setDeclCode] = useState('');
+  const [declError, setDeclError] = useState('');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     let isMounted = true;
     async function load() {
-      const [mRes, tRes, gRes, eRes] = await Promise.all([
+      const [mRes, tRes, gRes, eRes, dRes] = await Promise.all([
         supabase
           .from('matchups')
           .select('id, stage, status, team_a_id, team_b_id, advances_to_matchup_id, advances_to_slot, winner_team_id_override, bracket_position, court, scheduled_date, scheduled_time')
@@ -41,6 +47,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
         supabase.from('teams').select('id, name').eq('division_id', divisionId),
         supabase.from('groups').select('id, name, is_playoff').eq('division_id', divisionId).order('name'),
         supabase.from('bracket_slot_edits').select('matchup_id, slot, old_team_name, new_team_name, edited_by_email, edited_at').eq('division_id', divisionId),
+        supabase.from('bracket_winner_declarations').select('matchup_id, winner_team_name, reason, declared_by_email, declared_at').eq('division_id', divisionId),
       ]);
       if (!isMounted) return;
       const err = mRes.error || tRes.error || gRes.error;
@@ -71,6 +78,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
         teamList: tRes.data,
         groupNames: gRes.data.filter((g) => !g.is_playoff).map((g) => g.name),
         edits: eRes.error ? [] : eRes.data,
+        declarations: dRes.error ? [] : dRes.data,
       });
     }
     load();
@@ -84,7 +92,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
 
   const canEdit = access.isOwner;
   const tree =
-    treeFromMatchups({ matchups: data.matchups, teams: data.teams, edits: data.edits, canEdit }) ||
+    treeFromMatchups({ matchups: data.matchups, teams: data.teams, edits: data.edits, declarations: data.declarations, canEdit }) ||
     treeFromTemplate(division.knockout_template, data.groupNames);
 
   if (!tree) {
@@ -96,6 +104,42 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
     setPick('');
     setCode('');
     setError('');
+  }
+
+  function openDeclare(match) {
+    setDeclaring(match.id);
+    setWinnerPick('');
+    setReason('');
+    setDeclCode('');
+    setDeclError('');
+    setNotice('');
+  }
+
+  async function declare(match) {
+    setBusy(true);
+    setDeclError('');
+    const { data: res, error: err } = await supabase.rpc('declare_bracket_winner', {
+      p_matchup_id: match.id,
+      p_winner_team_id: winnerPick,
+      p_override_code: declCode,
+      p_reason: reason,
+    });
+    setBusy(false);
+    if (err) {
+      setDeclError(err.message);
+      return;
+    }
+    if (!res?.ok) {
+      setDeclError(declareErrorText(res));
+      return;
+    }
+    setDeclaring(null);
+    setNotice(
+      res.next_place_locked
+        ? 'Winner recorded. The place in the next round was set by hand, so it was left as it is.'
+        : ''
+    );
+    setReload((k) => k + 1);
   }
 
   async function save(match) {
@@ -122,6 +166,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
 
   return (
     <div>
+      {notice && <div className="callout-error" role="status">{notice}</div>}
       {!tree.exists && (
         <p className="field-hint">
           This is how the knockout will look. Every place is TBD until the pool matches are finished and the bracket is created.
@@ -209,6 +254,62 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
                           </div>
                         );
                       })}
+                      {match.declared && (
+                        <div className="tree-declared">
+                          <strong>Winner declared by hand: {match.declared.winner}</strong>
+                          <span>
+                            By {match.declared.by} · {when(match.declared.at)}
+                          </span>
+                          {match.declared.reason && <span>Reason: {match.declared.reason}</span>}
+                        </div>
+                      )}
+                      {match.declarable && declaring !== match.id && (
+                        <button type="button" className="tree-declare" onClick={() => openDeclare(match)}>
+                          Declare winner by hand
+                        </button>
+                      )}
+                      {declaring === match.id && (
+                        <div className="tree-editor">
+                          <span className="field-label">Who won?</span>
+                          {match.slots.map((slot) => (
+                            <label key={slot.side} className="check-row">
+                              <input type="radio" name={`winner-${match.id}`} checked={winnerPick === slot.teamId} onChange={() => setWinnerPick(slot.teamId)} />
+                              <span>{slot.name}</span>
+                            </label>
+                          ))}
+                          <label className="field-label" htmlFor={`reason-${match.id}`}>
+                            Reason (optional)
+                          </label>
+                          <input
+                            id={`reason-${match.id}`}
+                            className="text-input"
+                            maxLength={300}
+                            placeholder="For example: the other pair withdrew"
+                            value={reason}
+                            onChange={(event) => setReason(event.target.value)}
+                          />
+                          <label className="field-label" htmlFor={`dcode-${match.id}`}>
+                            Override password
+                          </label>
+                          <input
+                            id={`dcode-${match.id}`}
+                            type="password"
+                            autoComplete="off"
+                            className="text-input"
+                            value={declCode}
+                            onChange={(event) => setDeclCode(event.target.value)}
+                          />
+                          {declError && <div className="callout-error" role="alert">{declError}</div>}
+                          <div className="tree-editor-actions">
+                            <button type="button" className="btn-primary" disabled={busy || !winnerPick || !declCode} onClick={() => declare(match)}>
+                              {busy ? 'Saving…' : 'Declare winner'}
+                            </button>
+                            <button type="button" className="btn-ghost" onClick={() => setDeclaring(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -219,7 +320,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
       </div>
       {tree.exists && (
         <p className="field-hint">
-          A place can be set by hand until its match starts. It needs the override password, and the change is shown under the place with who made it and when.
+          A place can be set by hand until its match starts, and a winner can be declared by hand if a match is not played. Both need the override password, and the change is shown on the match with who made it and when.
         </p>
       )}
     </div>

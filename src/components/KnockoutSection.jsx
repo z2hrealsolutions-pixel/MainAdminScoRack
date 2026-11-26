@@ -62,7 +62,12 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
   const chosen = mode || (r16 && status.playoff_exists ? 'seeded' : division.knockout_template ? 'plan' : unequal ? 'custom' : 'cross');
 
   if (!hasGroups) {
-    return <BracketView tenantId={tenantId} divisionId={divisionId} format={division.format_type} />;
+    return (
+      <div>
+        <KnockoutTree tenantId={tenantId} divisionId={divisionId} division={division} refreshKey={bracketKey} />
+        <BracketView tenantId={tenantId} divisionId={divisionId} format={division.format_type} hideRounds onChanged={() => setBracketKey((k) => k + 1)} />
+      </div>
+    );
   }
 
   const refresh = () => {
@@ -141,19 +146,6 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
         />
       )}
       </div>
-      </details>
-
-      <details className="tool-fold">
-        <summary>Declare a winner by hand</summary>
-        <div className="tool-fold-body">
-      <BracketView
-        key={bracketKey}
-        tenantId={tenantId}
-        divisionId={divisionId}
-        format={division.format_type}
-        hideGenerate
-      />
-        </div>
       </details>
     </div>
   );

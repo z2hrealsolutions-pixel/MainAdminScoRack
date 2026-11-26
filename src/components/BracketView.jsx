@@ -26,7 +26,7 @@ function sortRounds(stages) {
   });
 }
 
-export default function BracketView({ tenantId, divisionId, format, hideGenerate = false }) {
+export default function BracketView({ tenantId, divisionId, format, hideGenerate = false, hideRounds = false, onChanged }) {
   const [advancePerGroup, setAdvancePerGroup] = useState(2);
   const [genState, setGenState] = useState('idle');
   const [genError, setGenError] = useState('');
@@ -34,7 +34,6 @@ export default function BracketView({ tenantId, divisionId, format, hideGenerate
   const [teams, setTeams] = useState({});
   const [loadError, setLoadError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
-  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -102,19 +101,7 @@ export default function BracketView({ tenantId, divisionId, format, hideGenerate
     }
     setGenState('idle');
     setReloadKey((k) => k + 1);
-  }
-
-  async function handleDeclareWinner(matchupId, winnerId) {
-    setActionError('');
-    const { error } = await supabase.rpc('advance_matchup_winner', {
-      p_matchup_id: matchupId,
-      p_winner_team_id: winnerId,
-    });
-    if (error) {
-      setActionError(error.message);
-      return;
-    }
-    setReloadKey((k) => k + 1);
+    if (onChanged) onChanged();
   }
 
   if (loadError) {
@@ -153,13 +140,12 @@ export default function BracketView({ tenantId, divisionId, format, hideGenerate
       </div>
       )}
       {genState === 'error' && <div className="callout-error">{genError}</div>}
-      {actionError && <div className="callout-error">{actionError}</div>}
 
-      {matchups?.length === 0 && (
+      {!hideRounds && matchups?.length === 0 && (
         <p className="tenants-empty">No bracket yet{hideGenerate ? '' : ', generate it above'}.</p>
       )}
 
-      {rounds.length > 0 && (
+      {!hideRounds && rounds.length > 0 && (
         <div className="bracket-rounds">
           {rounds.map((stage) => (
             <div key={stage} className="bracket-round-col">
@@ -181,19 +167,12 @@ export default function BracketView({ tenantId, divisionId, format, hideGenerate
                     {['team_a_id', 'team_b_id'].map((slotKey) => {
                       const teamId = m[slotKey];
                       const isWinner = m.winner_team_id_override === teamId && teamId;
-                      const canDeclare =
-                        teamId &&
-                        m.team_a_id &&
-                        m.team_b_id &&
-                        m.status !== 'complete' &&
-                        m.status !== 'bye';
                       return (
                         <button
                           key={slotKey}
                           type="button"
                           className={`bracket-slot ${isWinner ? 'bracket-slot-winner' : ''}`}
-                          disabled={!canDeclare}
-                          onClick={() => canDeclare && handleDeclareWinner(m.id, teamId)}
+                          disabled
                         >
                           {teamId
                             ? teams[teamId] ?? 'Unknown'

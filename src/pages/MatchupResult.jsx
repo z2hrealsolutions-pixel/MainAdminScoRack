@@ -301,8 +301,8 @@ export default function MatchupResult({ email }) {
 
       {!isGroupMatch && isLeague && (
         <p className="dash-sub">
-          This is a knockout tie. Add its rubbers below, then declare the winner from the Bracket
-          section of the division page, it places them straight into the next round.
+          This is a knockout tie. Add its rubbers below, then declare the winner from the Knockout step
+          of the division page (it needs the override password), and it places them straight into the next round.
         </p>
       )}
 

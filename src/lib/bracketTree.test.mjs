@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { ordinal, tokenLabel, matchLabel, treeFromTemplate, treeFromMatchups, latestEdits, slotErrorText } from './bracketTree.js';
+import { ordinal, tokenLabel, matchLabel, treeFromTemplate, treeFromMatchups, latestEdits, slotErrorText, latestDeclarations, declareErrorText } from './bracketTree.js';
 
 assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 22].map(ordinal), ['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd']);
 assert.equal(tokenLabel('g1p1', ['Group A', 'Group B']), '1st in Group A');
@@ -64,5 +64,26 @@ assert.match(slotErrorText({ ok: false, error: 'match_started' }), /already star
 assert.match(slotErrorText({ ok: false, error: 'override_invalid', attempts_left: 2 }), /2 tries left/);
 assert.match(slotErrorText({ ok: false, error: 'override_not_set' }), /ScoreIt team/);
 assert.equal(slotErrorText({ ok: true }), '');
+
+// declaring a winner by hand: who can, and the note that is kept
+const decl = [
+  { matchup_id: 's2', winner_team_name: 'Amani / Ruqaiyah', reason: 'old', declared_by_email: 'a@x.com', declared_at: '2026-11-26T05:00:00Z' },
+  { matchup_id: 's2', winner_team_name: 'Amani / Ruqaiyah', reason: 'Opponents withdrew', declared_by_email: 'z2hrealsolutions@gmail.com', declared_at: '2026-11-26T07:00:00Z' },
+];
+assert.equal(latestDeclarations(decl).s2.reason, 'Opponents withdrew');
+const dt = treeFromMatchups({ matchups, teams, edits: [], declarations: decl, canEdit: true });
+const [d1, d2] = dt.rounds[0].matches;
+assert.equal(d1.declarable, false, 'a finished match is not declarable');
+assert.equal(d2.declarable, true);
+assert.equal(d2.declared.by, 'z2hrealsolutions@gmail.com');
+assert.equal(d2.declared.winner, 'Amani / Ruqaiyah');
+assert.equal(d2.declared.reason, 'Opponents withdrew');
+assert.equal(d1.declared, null);
+assert.equal(dt.rounds[1].matches[0].declarable, false, 'both teams must be set');
+assert.equal(treeFromMatchups({ matchups, teams, edits: [], declarations: [], canEdit: false }).rounds[0].matches[1].declarable, false, 'no declaring without the right');
+assert.match(declareErrorText({ ok: false, error: 'already_complete' }), /already been recorded/);
+assert.match(declareErrorText({ ok: false, error: 'override_locked', retry_after_seconds: 600 }), /10 minutes/);
+assert.match(declareErrorText({ ok: false, error: 'override_invalid', attempts_left: 1 }), /1 try left/);
+assert.equal(declareErrorText({ ok: true }), '');
 
 console.log('bracketTree tests passed');

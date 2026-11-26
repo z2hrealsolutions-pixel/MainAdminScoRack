@@ -78,9 +78,19 @@ export function latestEdits(edits) {
 }
 
 // the tree from the real matches
-export function treeFromMatchups({ matchups, teams, edits, canEdit }) {
+// the latest hand-declared winner of each match, keyed by match id
+export function latestDeclarations(list) {
+  const out = {};
+  (list || []).forEach((d) => {
+    if (!out[d.matchup_id] || new Date(d.declared_at) > new Date(out[d.matchup_id].declared_at)) out[d.matchup_id] = d;
+  });
+  return out;
+}
+
+export function treeFromMatchups({ matchups, teams, edits, declarations, canEdit }) {
   if (!matchups || matchups.length === 0) return null;
   const latest = latestEdits(edits);
+  const declared = latestDeclarations(declarations);
   const stages = sortStages([...new Set(matchups.map((m) => m.stage))]);
   const feederOf = (m, slotName) =>
     matchups.find((f) => f.advances_to_matchup_id === m.id && f.advances_to_slot === slotName);
@@ -116,6 +126,15 @@ export function treeFromMatchups({ matchups, teams, edits, canEdit }) {
             when: [m.court, m.scheduled_date, m.scheduled_time].filter(Boolean).join(' · '),
             slots,
             editable: Boolean(canEdit) && m.status === 'scheduled' && !played,
+            declarable: Boolean(canEdit) && Boolean(m.team_a_id) && Boolean(m.team_b_id) && m.status !== 'complete' && m.status !== 'bye',
+            declared: declared[m.id]
+              ? {
+                  by: declared[m.id].declared_by_email || 'Unknown',
+                  at: declared[m.id].declared_at,
+                  winner: declared[m.id].winner_team_name,
+                  reason: declared[m.id].reason || null,
+                }
+              : null,
           };
         }),
     })),
@@ -139,6 +158,34 @@ export function slotErrorText(res) {
       return 'This place cannot be edited.';
     case 'override_not_set':
       return 'Editing the bracket needs the override password, and none has been set for this tenant yet. Ask the ScoreIt team.';
+    case 'override_invalid':
+      return `That override password is not right. ${res.attempts_left} ${res.attempts_left === 1 ? 'try' : 'tries'} left.`;
+    case 'override_locked': {
+      const mins = Math.max(1, Math.ceil((res.retry_after_seconds || 60) / 60));
+      return `Too many wrong tries. Wait ${mins} minute${mins === 1 ? '' : 's'} and try again.`;
+    }
+    default:
+      return 'Something went wrong. Try again.';
+  }
+}
+
+// the words for what declare_bracket_winner hands back
+export function declareErrorText(res) {
+  if (!res || res.ok) return '';
+  switch (res.error) {
+    case 'already_complete':
+      return 'A winner has already been recorded for this match.';
+    case 'teams_not_set':
+      return 'Both teams must be set before a winner can be declared.';
+    case 'not_in_match':
+      return 'The winner has to be one of the two teams in this match.';
+    case 'reason_too_long':
+      return 'The reason is too long. Keep it under 300 characters.';
+    case 'not_knockout':
+    case 'match_is_bye':
+      return 'A winner cannot be declared for this match.';
+    case 'override_not_set':
+      return 'Declaring a winner by hand needs the override password, and none has been set for this tenant yet. Ask the ScoreIt team.';
     case 'override_invalid':
       return `That override password is not right. ${res.attempts_left} ${res.attempts_left === 1 ? 'try' : 'tries'} left.`;
     case 'override_locked': {
