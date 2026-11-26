@@ -67,6 +67,12 @@ export function treeFromTemplate(template, groupNames = []) {
   };
 }
 
+// Is this match the one whose panel is open? A match that does not exist yet (the tree drawn from the plan)
+// has no id, and nothing is ever open on it, even though "nothing open" is also null.
+export function isOpenFor(openId, matchId) {
+  return Boolean(matchId) && openId === matchId;
+}
+
 // the latest edit of each place, keyed "matchupId:team_a"
 export function latestEdits(edits) {
   const out = {};

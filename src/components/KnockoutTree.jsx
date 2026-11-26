@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useVenueAccess } from '../lib/access';
-import { treeFromMatchups, treeFromTemplate, slotErrorText, declareErrorText } from '../lib/bracketTree';
+import { treeFromMatchups, treeFromTemplate, slotErrorText, declareErrorText, isOpenFor } from '../lib/bracketTree';
 
 function when(iso) {
   const d = new Date(iso);
@@ -195,7 +195,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
                     <div className="tree-match">
                       <div className="tree-match-head">
                         <span className="tree-match-label">{match.label}</span>
-                        {match.id && match.declarable && !match.editable && tools !== match.id && (
+                        {match.id && match.declarable && !match.editable && !isOpenFor(tools, match.id) && (
                           <button type="button" className="tree-edit" onClick={() => setTools(match.id)}>
                             Edit
                           </button>
@@ -280,9 +280,9 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
                           {match.declared.reason && <span>Reason: {match.declared.reason}</span>}
                         </div>
                       )}
-                      {tools === match.id && (
+                      {isOpenFor(tools, match.id) && (
                         <div className="tree-tools">
-                          {match.declarable && declaring !== match.id && (
+                          {match.declarable && !isOpenFor(declaring, match.id) && (
                             <button type="button" className="tree-declare" onClick={() => openDeclare(match)}>
                               Declare winner by hand
                             </button>
@@ -293,7 +293,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
                           </button>
                         </div>
                       )}
-                      {declaring === match.id && (
+                      {isOpenFor(declaring, match.id) && (
                         <div className="tree-editor">
                           <span className="field-label">Who won?</span>
                           {match.slots.map((slot) => (

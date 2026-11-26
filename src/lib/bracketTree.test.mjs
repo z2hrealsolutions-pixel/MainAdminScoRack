@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { ordinal, tokenLabel, matchLabel, treeFromTemplate, treeFromMatchups, latestEdits, slotErrorText, latestDeclarations, declareErrorText } from './bracketTree.js';
+import { ordinal, tokenLabel, matchLabel, treeFromTemplate, treeFromMatchups, latestEdits, slotErrorText, latestDeclarations, declareErrorText, isOpenFor } from './bracketTree.js';
 
 assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 22].map(ordinal), ['1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd']);
 assert.equal(tokenLabel('g1p1', ['Group A', 'Group B']), '1st in Group A');
@@ -85,5 +85,16 @@ assert.match(declareErrorText({ ok: false, error: 'already_complete' }), /alread
 assert.match(declareErrorText({ ok: false, error: 'override_locked', retry_after_seconds: 600 }), /10 minutes/);
 assert.match(declareErrorText({ ok: false, error: 'override_invalid', attempts_left: 1 }), /1 try left/);
 assert.equal(declareErrorText({ ok: true }), '');
+
+// a panel opens only on a real match. The tree drawn from the plan has no match ids (null), and "nothing open"
+// is also null: the two must never be taken for each other, or every planned match shows its edit panel
+const planned = treeFromTemplate({ rounds: [[{ a: 'g1p1', b: 'g2p2' }], [{ a: { w: [0, 0] }, b: { w: [0, 0] } }]] }, ['A', 'B']);
+assert.ok(planned.rounds.every((r) => r.matches.every((m) => m.id === null)), 'planned matches have no id');
+assert.equal(isOpenFor(null, null), false);
+assert.equal(isOpenFor(undefined, null), false);
+assert.equal(isOpenFor(null, 'm1'), false);
+assert.equal(isOpenFor('m2', 'm1'), false);
+assert.equal(isOpenFor('m1', 'm1'), true);
+for (const round of planned.rounds) for (const m of round.matches) assert.equal(isOpenFor(null, m.id), false);
 
 console.log('bracketTree tests passed');
