@@ -8,6 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const soft = readFileSync(join(here, '..', 'styles', 'soft.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const main = readFileSync(join(here, '..', 'main.jsx'), 'utf8');
 const detail = readFileSync(join(here, '..', 'pages', 'TenantDetail.jsx'), 'utf8');
+const knockout = readFileSync(join(here, '..', 'components', 'KnockoutSection.jsx'), 'utf8');
 
 let passed = 0, failed = 0;
 const check = (label, ok, extra) => { if (ok) { passed++; console.log('PASS:', label); } else { failed++; console.log('FAIL:', label, extra ?? ''); } };
@@ -18,6 +19,7 @@ check('tiles take their colours and shadow from the theme settings', /\.tenant-s
 check('things inside a tile are a shade apart, from the theme settings', /\.division-row,[\s\S]*?background:\s*var\(--soft-inner\)/.test(soft));
 check('a tenant page section opens on its own, not squeezed beside another', /\.tenant-open > \.tenant-section\s*\{[^}]*max-width:\s*none/.test(soft));
 check('the tenant page opens with a grid of cards, and each section opens from one', /<TenantCards /.test(detail) && ['divisions', 'share', 'venue', 'team', 'brand', 'advanced'].every((id) => detail.includes(`open === '${id}'`)) && !/bento-grid/.test(detail));
+check('every way of building the bracket sits in a fold that starts closed', (knockout.match(/<details className="tool-fold">\s*<summary>(\{exists \?|Build or rebuild)/g) || []).length === 2 && !/tool-fold" open=\{!exists\}/.test(knockout));
 check('soft.css is loaded after the other stylesheets, so it can restyle them', main.indexOf("soft.css") > main.indexOf("global.css"));
 
 console.log(`\n${passed} passed, ${failed} failed`);

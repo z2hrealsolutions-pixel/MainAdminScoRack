@@ -65,7 +65,12 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
     return (
       <div>
         <KnockoutTree tenantId={tenantId} divisionId={divisionId} division={division} refreshKey={bracketKey} />
-        <BracketView tenantId={tenantId} divisionId={divisionId} format={division.format_type} hideRounds onChanged={() => setBracketKey((k) => k + 1)} />
+        <details className="tool-fold">
+          <summary>Build or rebuild the bracket</summary>
+          <div className="tool-fold-body">
+            <BracketView tenantId={tenantId} divisionId={divisionId} format={division.format_type} hideRounds onChanged={() => setBracketKey((k) => k + 1)} />
+          </div>
+        </details>
       </div>
     );
   }
@@ -81,7 +86,8 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
     <div>
       <KnockoutTree tenantId={tenantId} divisionId={divisionId} division={division} refreshKey={bracketKey} />
 
-      <details className="tool-fold" open={!exists}>
+      {/* closed until it is clicked, whether or not a bracket exists yet */}
+      <details className="tool-fold">
       <summary>{exists ? 'Change or rebuild the bracket' : 'Build the bracket'}</summary>
       <div className="tool-fold-body">
       <details className="tool-fold" open={chosen !== 'plan'}>
