@@ -56,7 +56,7 @@ export default function TenantCreate({ email }) {
     }
 
     // the person who will run the venue, added as its first owner and sent their
-    // sign-in link. When they open it, the venue appears for them.
+    // invitation email. When they open it, the venue appears for them.
     if (ownerEmail.trim() !== '') {
       const address = ownerEmail.trim().toLowerCase();
       const invite = await supabase.rpc('invite_staff', {
@@ -75,7 +75,7 @@ export default function TenantCreate({ email }) {
         setCreatedId(data.id);
         setStatus('partial');
         setErrorMessage(
-          `The owner was added, but the sign-in email could not be sent (${mail.message}). Its Team section has a message you can send them yourself.`
+          `The owner was added, but the invitation email could not be sent (${mail.message}). Use "Resend invitation" in its Team section.`
         );
         return;
       }
@@ -162,8 +162,8 @@ export default function TenantCreate({ email }) {
             autoComplete="off"
           />
           <p className="field-hint">
-            The person who will run this tenant. They are sent a sign-in email straight away, and when
-            they open the link the tenant appears for them and they can add their own staff. You can
+            The person who will run this tenant. They are sent an invitation email straight away, and when
+            they open it the tenant appears for them and they can add their own staff. You can
             also do this later from the tenant's page.
           </p>
         </div>

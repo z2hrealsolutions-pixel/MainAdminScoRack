@@ -3,13 +3,28 @@ import { supabase } from '../supabaseClient';
 import { ownSignInUrl } from '../lib/consoleUrl';
 import '../styles/login.css';
 import Brand from '../components/Brand';
+import { pickLoginMode, passwordErrorMessage } from '../lib/loginMode';
 
 export default function Login() {
+  const mode = pickLoginMode(window.location.hostname);
+  // on an address that shows both, the person picks; otherwise the address decides
+  const [tab, setTab] = useState('admin');
+  const which = mode === 'both' ? tab : mode;
+
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [errorMessage, setErrorMessage] = useState('');
 
-  async function handleSubmit(event) {
+  function pickTab(next) {
+    setTab(next);
+    setStatus('idle');
+    setErrorMessage('');
+    setPassword('');
+  }
+
+  async function handleLink(event) {
     event.preventDefault();
     setStatus('sending');
     setErrorMessage('');
@@ -18,15 +33,41 @@ export default function Login() {
       email: email.trim(),
       options: {
         emailRedirectTo: ownSignInUrl(),
+        // an account is made by an invitation, never by asking for a link
+        shouldCreateUser: false,
       },
     });
 
     if (error) {
       setStatus('error');
-      setErrorMessage(error.message);
+      // the same words whether or not the address has an account, so the page does not tell a stranger which addresses exist
+      setErrorMessage(
+        /signups not allowed|user not found/i.test(error.message)
+          ? 'If that address has been invited, a link is on its way.'
+          : error.message
+      );
       return;
     }
     setStatus('sent');
+  }
+
+  async function handlePassword(event) {
+    event.preventDefault();
+    setStatus('sending');
+    setErrorMessage('');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      setStatus('error');
+      setErrorMessage(passwordErrorMessage(error));
+      setPassword('');
+      return;
+    }
+    // signed in: the app notices the session and opens the console
   }
 
   return (
@@ -49,65 +90,135 @@ export default function Login() {
         </div>
 
         <h1 className="login-headline">Sign in</h1>
-        <p className="login-sub">
-          For ScoreIt operators and tenant organisers. Enter your email and
-          we'll send you a link, no password needed.
-        </p>
 
-        {status === 'sent' ? (
-          <div className="login-sent">
-            <p>
-              Check <strong>{email}</strong> for a link, it can take a minute
-              and may land in spam. Links expire after an hour, ask for a new
-              one if yours has. If you were just invited and nothing ever
-              arrives, tell whoever invited you.
-            </p>
+        {mode === 'both' && (
+          <div className="login-tabs" role="tablist" aria-label="Who is signing in">
             <button
               type="button"
-              className="btn-ghost"
-              onClick={() => setStatus('idle')}
+              role="tab"
+              aria-selected={tab === 'admin'}
+              className={`login-tab${tab === 'admin' ? ' login-tab-on' : ''}`}
+              onClick={() => pickTab('admin')}
             >
-              Use a different email
+              ScoreIt admin
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'rent'}
+              className={`login-tab${tab === 'rent' ? ' login-tab-on' : ''}`}
+              onClick={() => pickTab('rent')}
+            >
+              Tenant organiser
             </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="login-form">
-            <label className="field-label" htmlFor="email">
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoFocus
-              className="text-input"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@yourteam.com"
-            />
-
-            {status === 'error' && (
-              <div className="callout-error" role="alert">
-                {errorMessage}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={status === 'sending'}
-            >
-              {status === 'sending' ? 'Sending link…' : 'Send access link'}
-            </button>
-          </form>
         )}
 
-        <p className="login-footnote">
-          Tenant organisers: use the exact email address you were invited
-          with. If you haven't been invited yet, ask whoever runs your
-          tenant's ScoreIt account. Without an invitation the link will still
-          arrive, but the console will stay locked.
-        </p>
+        {which === 'admin' ? (
+          <>
+            <p className="login-sub">For the ScoreIt team. Sign in with your email and password.</p>
+            <form onSubmit={handlePassword} className="login-form">
+              <label className="field-label" htmlFor="email">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoFocus
+                autoComplete="username"
+                className="text-input"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@yourteam.com"
+              />
+
+              <label className="field-label" htmlFor="password">
+                Password
+              </label>
+              <div className="login-password">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  className="text-input"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-ghost login-show"
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+
+              {status === 'error' && (
+                <div className="callout-error" role="alert">
+                  {errorMessage}
+                </div>
+              )}
+
+              <button type="submit" className="btn-primary" disabled={status === 'sending'}>
+                {status === 'sending' ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+          </>
+        ) : (
+          <>
+            <p className="login-sub">
+              For tenant owners and staff. Enter the email address you were invited with and we'll send you a
+              link, no password needed.
+            </p>
+
+            {status === 'sent' ? (
+              <div className="login-sent">
+                <p>
+                  If <strong>{email}</strong> has been invited, a link is on its way. It can take a minute and
+                  may land in spam. Links expire after an hour, ask for a new one if yours has. If nothing ever
+                  arrives, tell whoever invited you.
+                </p>
+                <button type="button" className="btn-ghost" onClick={() => setStatus('idle')}>
+                  Use a different email
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleLink} className="login-form">
+                <label className="field-label" htmlFor="email">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  autoFocus
+                  className="text-input"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@yourteam.com"
+                />
+
+                {status === 'error' && (
+                  <div className="callout-error" role="alert">
+                    {errorMessage}
+                  </div>
+                )}
+
+                <button type="submit" className="btn-primary" disabled={status === 'sending'}>
+                  {status === 'sending' ? 'Sending link…' : 'Send access link'}
+                </button>
+              </form>
+            )}
+
+            <p className="login-footnote">
+              Use the exact email address you were invited with. If you haven't been invited yet, ask whoever
+              runs your tenant's ScoreIt account.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

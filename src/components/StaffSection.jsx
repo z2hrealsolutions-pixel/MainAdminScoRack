@@ -62,17 +62,38 @@ export default function StaffSection({ tenantId, venueName }) {
       setError(err.message);
       return;
     }
-    // the invitation is saved, now send them their sign-in link
+    // the invitation is saved, now email it
     const mail = await sendSignInLink(address);
     setBusy(false);
     setMessage(
       mail.ok
-        ? `Added. We emailed a sign-in link to ${address}, it can take a minute and may land in spam. They can also sign in themselves at ${tenantConsoleUrl()}.`
-        : `Added, but the sign-in email could not be sent (${mail.message}). Use "Copy message" on their row and send it yourself, or ask them to sign in at ${tenantConsoleUrl()} with that address.`
+        ? `Added. We emailed an invitation to ${address}, it can take a minute and may land in spam. After that they sign in at ${tenantConsoleUrl()}.`
+        : `Added, but the invitation email could not be sent (${mail.message}). Use "Resend invitation" on their row to try again.`
     );
     setEmail('');
     setRole('staff');
     await load();
+  }
+
+  async function resendInvite(i) {
+    setBusy(true);
+    setError('');
+    setMessage('');
+    // saving the invitation again makes it yours and fresh, which is what lets the email go out
+    const { error: err } = await supabase.rpc('invite_staff', {
+      p_tenant_id: tenantId,
+      p_email: i.email,
+      p_role: i.role,
+    });
+    if (err) {
+      setBusy(false);
+      setError(err.message);
+      return;
+    }
+    const mail = await sendSignInLink(i.email);
+    setBusy(false);
+    if (mail.ok) setMessage(`Invitation emailed again to ${i.email}. It can take a minute and may land in spam.`);
+    else setError(`The invitation email could not be sent (${mail.message}).`);
   }
 
   async function copyInvite(address) {
@@ -153,6 +174,9 @@ export default function StaffSection({ tenantId, venueName }) {
               <span className="staff-role-text mono">{i.role}</span>
               {access.isOwner && (
                 <>
+                  <button type="button" className="btn-ghost" disabled={busy} onClick={() => resendInvite(i)}>
+                    Resend invitation
+                  </button>
                   <button type="button" className="btn-ghost" onClick={() => copyInvite(i.email)}>
                     Copy message
                   </button>
@@ -212,9 +236,8 @@ export default function StaffSection({ tenantId, venueName }) {
             Add
           </button>
           <p className="field-hint invite-hint">
-            They get a sign-in email straight away. When they open the link, their access appears.
-            They must use exactly this address. If nothing arrives, use "Copy message" on their row
-            and send it yourself.
+            They get an invitation email straight away. When they open it, their access appears.
+            They must use exactly this address. If nothing arrives, use "Resend invitation" on their row.
           </p>
         </form>
       ) : (
