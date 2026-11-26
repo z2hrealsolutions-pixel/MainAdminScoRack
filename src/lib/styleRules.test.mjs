@@ -16,8 +16,8 @@ check('there is no glass in the console: no blur, no backdrop filter', !/backdro
 check('there is no glow or gradient in the console, only solid tiles', !/gradient|glow/.test(soft));
 check('tiles take their colours and shadow from the theme settings', /\.tenant-section,[\s\S]*?background:\s*var\(--soft-tile\)[\s\S]*?box-shadow:\s*var\(--soft-shadow\)/.test(soft));
 check('things inside a tile are a shade apart, from the theme settings', /\.division-row,[\s\S]*?background:\s*var\(--soft-inner\)/.test(soft));
-check('the venue page is a 12 column bento from 1000 pixels: 7 and 5, then 5 and 7, the rest full width', /repeat\(12, minmax\(0, 1fr\)\)/.test(soft) && /:nth-child\(1\)\s*\{\s*grid-column:\s*span 7/.test(soft) && /:nth-child\(2\)\s*\{\s*grid-column:\s*span 5/.test(soft) && /:nth-child\(4\)\s*\{\s*grid-column:\s*span 7/.test(soft) && /:nth-child\(n \+ 5\)\s*\{\s*grid-column:\s*1 \/ -1/.test(soft));
-check('the venue page wraps its sections in the bento grid, and the bento is closed again', /<div className="bento-grid">/.test(detail) && (detail.match(/<div className="bento-grid">/g) || []).length === 1 && detail.lastIndexOf('</div>') > detail.indexOf('bento-grid'));
+check('a tenant page section opens on its own, not squeezed beside another', /\.tenant-open > \.tenant-section\s*\{[^}]*max-width:\s*none/.test(soft));
+check('the tenant page opens with a grid of cards, and each section opens from one', /<TenantCards /.test(detail) && ['divisions', 'share', 'venue', 'team', 'brand', 'advanced'].every((id) => detail.includes(`open === '${id}'`)) && !/bento-grid/.test(detail));
 check('soft.css is loaded after the other stylesheets, so it can restyle them', main.indexOf("soft.css") > main.indexOf("global.css"));
 
 console.log(`\n${passed} passed, ${failed} failed`);

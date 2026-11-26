@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addressesFor } from '../lib/addresses';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Shell from '../components/Shell';
 import StatusPill from '../components/StatusPill';
@@ -10,6 +10,7 @@ import StaffSection from '../components/StaffSection';
 import DeleteTenant from '../components/DeleteTenant';
 import OverrideCodePanel from '../components/OverrideCodePanel';
 import BrandKitSection from '../components/BrandKitSection';
+import TenantCards from '../components/TenantCards';
 import { useVenueAccess } from '../lib/access';
 import { slugify, isValidSlug } from '../lib/slugify';
 import { SPORTS } from '../lib/sports';
@@ -47,6 +48,9 @@ export default function TenantDetail({ email }) {
   const [venue, setVenue] = useState({ name: '', address: '', courts: '' });
   const [venueState, setVenueState] = useState('idle'); // idle | saving | saved | error
   const [venueError, setVenueError] = useState('');
+  const [searchParams] = useSearchParams();
+  const [divisionCount, setDivisionCount] = useState(null);
+  const requested = searchParams.get('section');
 
   useEffect(() => {
     let isMounted = true;
@@ -64,6 +68,20 @@ export default function TenantDetail({ email }) {
         setTenant(data);
         setForm({ name: data.name, slug: data.slug, sport: data.sport });
         setVenue(venueFrom(data));
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    supabase
+      .from('divisions')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .then(({ data }) => {
+        if (isMounted && Array.isArray(data)) setDivisionCount(data.length);
       });
     return () => {
       isMounted = false;
@@ -199,6 +217,41 @@ export default function TenantDetail({ email }) {
     );
   }
 
+  const canBrand = access.isOperator || access.isOwner;
+  const canAdvanced = access.isOperator || access.isOwner;
+  const cards = [
+    {
+      id: 'divisions',
+      title: 'Divisions',
+      text: 'Teams, pools, rules and matches for each division.',
+      note: divisionCount === null ? null : `${divisionCount} ${divisionCount === 1 ? 'division' : 'divisions'}`,
+    },
+    {
+      id: 'share',
+      title: 'Referee and public links',
+      text: 'The addresses for spectators, the TV board and referees.',
+    },
+    {
+      id: 'venue',
+      title: 'Venue',
+      text: 'Where the tournaments are played, and how many courts.',
+      note: tenant.venue_name || 'Not set yet',
+    },
+    { id: 'team', title: 'Team', text: 'Who can sign in and run this tenant.' },
+    ...(canBrand ? [{ id: 'brand', title: 'Brand kit', text: 'Logo, banner and colours on the live pages.' }] : []),
+    ...(canAdvanced
+      ? [
+          {
+            id: 'advanced',
+            title: access.isOperator ? 'Advanced' : 'Tenant details',
+            text: access.isOperator ? 'Override password, status, details and delete.' : 'The name shown to the public.',
+          },
+        ]
+      : []),
+  ];
+  const allowed = new Set(cards.map((c) => c.id));
+  const open = requested && allowed.has(requested) ? requested : null;
+
   return (
     <Shell email={email}>
       {access.isOperator && (
@@ -213,13 +266,24 @@ export default function TenantDetail({ email }) {
       </div>
       <p className="dash-sub mono">/{tenant.slug}</p>
 
-      <div className="bento-grid">
+      {!open && <TenantCards tenantId={tenantId} cards={cards} />}
 
+      {open && (
+        <Link to={`/tenants/${tenantId}`} className="tenants-back mono tcard-back">
+          ← All sections
+        </Link>
+      )}
+
+      <div className="tenant-open">
+
+      {open === 'divisions' && (
       <section className="tenant-section">
         <h2 className="tenant-section-title">Divisions</h2>
         <DivisionList tenantId={tenant.id} />
       </section>
+      )}
 
+      {open === 'share' && (
       <section className="tenant-section">
         <h2 className="tenant-section-title">Share with players and referees</h2>
         {addresses.spectators || addresses.tv || addresses.referees ? (
@@ -250,7 +314,9 @@ export default function TenantDetail({ email }) {
           </p>
         )}
       </section>
+      )}
 
+      {open === 'venue' && (
       <section className="tenant-section">
         <h2 className="tenant-section-title">Venue</h2>
         <p className="field-hint">
@@ -332,13 +398,13 @@ export default function TenantDetail({ email }) {
           </dl>
         )}
       </section>
+      )}
 
-      <StaffSection tenantId={tenant.id} venueName={tenant.name} />
+      {open === 'team' && <StaffSection tenantId={tenant.id} venueName={tenant.name} />}
 
-      <BrandKitSection tenantId={tenant.id} tenantName={tenant.name} />
+      {open === 'brand' && <BrandKitSection tenantId={tenant.id} tenantName={tenant.name} />}
 
-      <details className="adv-fold">
-        <summary>Advanced settings</summary>
+      {open === 'advanced' && (
         <div className="adv-body">
       {access.isOperator && (
         <>
@@ -480,7 +546,7 @@ export default function TenantDetail({ email }) {
         </section>
       )}
         </div>
-      </details>
+      )}
       </div>
     </Shell>
   );

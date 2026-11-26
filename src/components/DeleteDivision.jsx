@@ -38,7 +38,7 @@ export default function DeleteDivision({ tenantId, divisionId }) {
       setError(err.message);
       return;
     }
-    navigate(`/tenants/${tenantId}`);
+    navigate(`/tenants/${tenantId}?section=divisions`);
   }
 
   if (!open) {

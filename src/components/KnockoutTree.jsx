@@ -29,6 +29,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [declaring, setDeclaring] = useState(null); // match id
+  const [tools, setTools] = useState(null); // the match whose Edit has been opened: its changes show
   const [winnerPick, setWinnerPick] = useState('');
   const [reason, setReason] = useState('');
   const [declCode, setDeclCode] = useState('');
@@ -99,7 +100,16 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
     return <p className="tenants-empty">The knockout has not been built yet.</p>;
   }
 
+  function closeTools() {
+    setTools(null);
+    setEditing(null);
+    setDeclaring(null);
+    setError('');
+    setDeclError('');
+  }
+
   function open(match, slot) {
+    setTools(match.id);
     setEditing({ matchId: match.id, side: slot.side });
     setPick('');
     setCode('');
@@ -134,6 +144,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
       return;
     }
     setDeclaring(null);
+    setTools(null);
     setNotice(
       res.next_place_locked
         ? 'Winner recorded. The place in the next round was set by hand, so it was left as it is.'
@@ -161,6 +172,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
       return;
     }
     setEditing(null);
+    setTools(null);
     setReload((k) => k + 1);
   }
 
@@ -183,6 +195,11 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
                     <div className="tree-match">
                       <div className="tree-match-head">
                         <span className="tree-match-label">{match.label}</span>
+                        {match.id && match.declarable && !match.editable && tools !== match.id && (
+                          <button type="button" className="tree-edit" onClick={() => setTools(match.id)}>
+                            Edit
+                          </button>
+                        )}
                         {match.id && (
                           <Link to={`/tenants/${tenantId}/divisions/${divisionId}/matchups/${match.id}`} className="tree-open">
                             {STATUS[match.status] ? STATUS[match.status].text : 'Open'} ›
@@ -263,10 +280,18 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
                           {match.declared.reason && <span>Reason: {match.declared.reason}</span>}
                         </div>
                       )}
-                      {match.declarable && declaring !== match.id && (
-                        <button type="button" className="tree-declare" onClick={() => openDeclare(match)}>
-                          Declare winner by hand
-                        </button>
+                      {tools === match.id && (
+                        <div className="tree-tools">
+                          {match.declarable && declaring !== match.id && (
+                            <button type="button" className="tree-declare" onClick={() => openDeclare(match)}>
+                              Declare winner by hand
+                            </button>
+                          )}
+                          {!match.declarable && !(editing && editing.matchId === match.id) && <span className="field-hint">Nothing can be changed on this match.</span>}
+                          <button type="button" className="tree-close" onClick={closeTools}>
+                            Done
+                          </button>
+                        </div>
                       )}
                       {declaring === match.id && (
                         <div className="tree-editor">
@@ -320,7 +345,7 @@ export default function KnockoutTree({ tenantId, divisionId, division, refreshKe
       </div>
       {tree.exists && (
         <p className="field-hint">
-          A place can be set by hand until its match starts, and a winner can be declared by hand if a match is not played. Both need the override password, and the change is shown on the match with who made it and when.
+          Press Edit on a match to set a place by hand, or to declare a winner if the match is not played. Each change needs the override password, and is shown on the match with who made it and when.
         </p>
       )}
     </div>

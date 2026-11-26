@@ -224,8 +224,8 @@ export default function DivisionDetail({ email }) {
 
   return (
     <Shell email={email}>
-      <Link to={`/tenants/${tenantId}`} className="tenants-back mono">
-        ← Back to tenant
+      <Link to={`/tenants/${tenantId}?section=divisions`} className="tenants-back mono">
+        ← Back to divisions
       </Link>
 
       <div className="tenant-detail-header">

@@ -45,8 +45,8 @@ export default function DivisionCreate({ email }) {
 
   return (
     <Shell email={email}>
-      <Link to={`/tenants/${tenantId}`} className="tenants-back mono">
-        ← Back to tenant
+      <Link to={`/tenants/${tenantId}?section=divisions`} className="tenants-back mono">
+        ← Back to divisions
       </Link>
       <h1 className="dash-headline">Add division</h1>
       <p className="dash-sub">

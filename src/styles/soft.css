@@ -55,35 +55,9 @@
   background: var(--page);
 }
 
-/* the venue page, as a bento: tiles of different sizes where there is room */
-.bento-grid {
-  display: grid;
-  gap: 18px;
-}
-
-.bento-grid > .tenant-section {
+/* the tenant page: one section opens at a time, so it never needs to share the row with another */
+.tenant-open > .tenant-section {
   margin: 0;
   max-width: none;
 }
 
-@media (min-width: 1000px) {
-  .bento-grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    align-items: start;
-  }
-  .bento-grid > :nth-child(1) {
-    grid-column: span 7;
-  }
-  .bento-grid > :nth-child(2) {
-    grid-column: span 5;
-  }
-  .bento-grid > :nth-child(3) {
-    grid-column: span 5;
-  }
-  .bento-grid > :nth-child(4) {
-    grid-column: span 7;
-  }
-  .bento-grid > :nth-child(n + 5) {
-    grid-column: 1 / -1;
-  }
-}
