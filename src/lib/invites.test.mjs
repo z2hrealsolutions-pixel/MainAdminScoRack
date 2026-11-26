@@ -9,5 +9,8 @@ check('known codes read as plain words', /expired/.test(inviteErrorMessage('not_
 check('an unknown code shows the server message', inviteErrorMessage('x', 'smtp down') === 'smtp down');
 check('nothing known still gives a message', inviteErrorMessage().length > 0);
 check('the invitation no longer asks Supabase for a link that creates accounts', !/signInWithOtp/.test(src) && /functions\.invoke\('invite-user'/.test(src));
+const staff = readFileSync(new URL('../components/StaffSection.jsx', import.meta.url), 'utf8');
+check('a ScoreIt admin is warned before taking away the last owner, by removing or demoting', /access\.isOperator && m\.role === 'owner' && next === 'staff' && ownerCount <= 1/.test(staff) && /const lastOwner = access\.isOperator && m\.role === 'owner' && ownerCount <= 1/.test(staff));
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

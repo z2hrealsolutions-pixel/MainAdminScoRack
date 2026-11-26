@@ -103,6 +103,10 @@ export default function StaffSection({ tenantId, venueName }) {
   }
 
   const members = (rows || []).filter((r) => r.kind === 'member');
+  const ownerCount = members.filter((m) => m.role === 'owner').length;
+  // only a ScoreIt admin can take away the last owner, and is asked to be sure first
+  const lastOwnerWarning =
+    'This is the last owner of the tenant. After this the tenant has no owner until you add one, and only the ScoreIt team can manage its team. Continue?';
   const invites = (rows || []).filter((r) => r.kind === 'invite');
 
   return (
@@ -128,13 +132,15 @@ export default function StaffSection({ tenantId, venueName }) {
                     aria-label={`Role for ${m.email}`}
                     value={m.role}
                     disabled={busy}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      if (access.isOperator && m.role === 'owner' && next === 'staff' && ownerCount <= 1 && !window.confirm(lastOwnerWarning)) return;
                       run('set_staff_role', {
                         p_tenant_id: tenantId,
                         p_user_id: m.user_id,
-                        p_role: event.target.value,
-                      })
-                    }
+                        p_role: next,
+                      });
+                    }}
                   >
                     <option value="owner">Owner</option>
                     <option value="staff">Staff</option>
@@ -148,11 +154,14 @@ export default function StaffSection({ tenantId, venueName }) {
                     className="btn-ghost"
                     disabled={busy}
                     onClick={() => {
+                      const lastOwner = access.isOperator && m.role === 'owner' && ownerCount <= 1;
                       if (
                         window.confirm(
-                          you
-                            ? 'Leave this tenant? You will lose access straight away.'
-                            : `Remove ${m.email}? They lose access straight away.`
+                          lastOwner
+                            ? lastOwnerWarning
+                            : you
+                              ? 'Leave this tenant? You will lose access straight away.'
+                              : `Remove ${m.email}? They lose access straight away.`
                         )
                       ) {
                         run('remove_staff', { p_tenant_id: tenantId, p_user_id: m.user_id });
