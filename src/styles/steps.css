@@ -1,0 +1,548 @@
+/* The step-by-step division page, and the pool and match views. Colours come from tokens.css only. */
+
+.division-meta {
+  margin: 0 0 var(--space-3);
+  color: var(--mist);
+  font-size: 14px;
+}
+
+/* what to do next */
+.nextup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: 1000px;
+  margin: 0 0 var(--space-3);
+  padding: 18px 22px;
+  background: var(--soft-tile);
+  border: 1px solid var(--lamp-dim);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--soft-shadow);
+}
+
+.nextup-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nextup-kicker {
+  color: var(--lamp-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nextup-title {
+  color: var(--paper);
+  font-size: 18px;
+}
+
+.nextup-hint {
+  color: var(--mist);
+  font-size: 14px;
+}
+
+.nextup-btn {
+  flex: none;
+}
+
+/* the numbered steps */
+.stepper {
+  max-width: 1000px;
+  margin: 0 0 var(--space-3);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stepper ol {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepper li {
+  flex: 1 0 auto;
+}
+
+.stepper-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 16px 8px 10px;
+  background: var(--soft-inner);
+  border: 1px solid var(--soft-line);
+  border-radius: 999px;
+  color: var(--mist);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.stepper-btn:hover {
+  border-color: var(--lamp-dim);
+}
+
+.stepper-btn:focus-visible {
+  outline: 2px solid var(--lamp-strong);
+  outline-offset: 2px;
+}
+
+.stepper-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stepper-done .stepper-dot {
+  background: var(--lamp);
+  border-color: var(--lamp);
+  color: var(--on-lamp);
+}
+
+.stepper-current .stepper-dot {
+  border-color: var(--lamp-strong);
+  color: var(--lamp-text);
+}
+
+.stepper-active {
+  background: var(--soft-tile);
+  border-color: var(--lamp);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* the open step */
+.step-panel {
+  margin-bottom: var(--space-3);
+}
+
+.step-lead {
+  margin: 0 0 var(--space-3);
+  color: var(--mist);
+  font-size: 14px;
+}
+
+/* pools as tables */
+.pool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.pool-card,
+.empty-card {
+  min-width: 0;
+  padding: var(--space-3);
+  background: var(--soft-inner);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-inner);
+}
+
+.pool-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.pool-title,
+.empty-card-title {
+  margin: 0;
+  color: var(--paper);
+  font-size: 16px;
+}
+
+.pool-count {
+  color: var(--mist);
+  font-size: 13px;
+}
+
+.pool-table-wrap {
+  overflow-x: auto;
+}
+
+.pool-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.pool-table th {
+  padding: 4px 6px;
+  color: var(--mist-dim);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pool-table td {
+  padding: 10px 6px;
+  border-top: 1px solid var(--soft-line);
+  color: var(--mist);
+  text-align: center;
+}
+
+.pool-table th:nth-child(2),
+.pool-table td:nth-child(2) {
+  text-align: left;
+}
+
+.pool-rank {
+  color: var(--lamp-text);
+  font-weight: 600;
+}
+
+.pool-team a {
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.pool-team a:hover {
+  color: var(--lamp-text);
+  text-decoration: underline;
+}
+
+/* matches */
+.pool-progress {
+  height: 6px;
+  margin-bottom: var(--space-2);
+  background: var(--soft-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pool-progress span {
+  display: block;
+  height: 100%;
+  background: var(--lamp);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  color: var(--mist);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.check-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.match-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 56px;
+  padding: 10px 12px;
+  background: var(--soft-tile);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-md);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.match-row:hover {
+  border-color: var(--lamp-dim);
+}
+
+.match-teams {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.match-vs {
+  color: var(--mist-dim);
+  font-size: 12px;
+}
+
+.match-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+  text-align: right;
+}
+
+.match-score {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.match-when {
+  color: var(--mist-dim);
+  font-size: 12px;
+}
+
+.match-chip {
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chip-done {
+  background: var(--lamp);
+  border-color: var(--lamp);
+  color: var(--on-lamp);
+}
+
+.chip-live {
+  border-color: var(--lamp-strong);
+  color: var(--lamp-text);
+}
+
+.chip-todo {
+  color: var(--mist);
+}
+
+/* the rules in plain words */
+.rule-summary {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.rule-summary li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--space-3);
+  padding: 12px 0;
+  border-top: 1px solid var(--soft-line);
+}
+
+.rule-summary li:first-child {
+  border-top: 0;
+}
+
+.rule-stage {
+  flex: 0 0 140px;
+  color: var(--paper);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.rule-text {
+  flex: 1 1 220px;
+  color: var(--mist);
+  font-size: 14px;
+}
+
+/* folds: tools and advanced settings, closed until asked for */
+.tool-fold,
+.adv-fold {
+  margin-top: var(--space-3);
+  background: var(--soft-inner);
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius-inner);
+}
+
+.tool-fold > summary,
+.adv-fold > summary {
+  padding: 14px 18px;
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.tool-fold > summary:focus-visible,
+.adv-fold > summary:focus-visible {
+  outline: 2px solid var(--lamp-strong);
+  outline-offset: -2px;
+  border-radius: var(--radius-inner);
+}
+
+.tool-fold-body {
+  padding: 0 18px 18px;
+}
+
+.tool-block {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--soft-line);
+}
+
+.tool-block:first-child {
+  border-top: 0;
+}
+
+.tool-title,
+.adv-title {
+  margin: 0 0 var(--space-2);
+  color: var(--paper);
+  font-size: 14px;
+}
+
+.adv-fold {
+  max-width: 1000px;
+  margin-bottom: var(--space-5);
+}
+
+.adv-body {
+  padding: 0 18px 18px;
+}
+
+.adv-block {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--soft-line);
+}
+
+.adv-block:first-child {
+  border-top: 0;
+}
+
+@media (max-width: 640px) {
+  .nextup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nextup-btn {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .pool-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rule-stage {
+    flex-basis: 100%;
+  }
+
+  .tenant-section {
+    padding: 16px;
+  }
+}
+
+.step-panel .tenant-section-title {
+  margin: 0 0 4px;
+  color: var(--paper);
+  font-family: inherit;
+  font-size: 20px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.tool-block .bracket-gen-row {
+  flex-wrap: wrap;
+}
+
+.tool-block .bracket-gen-input {
+  flex: none;
+  width: 96px;
+}
+
+.tool-block .bracket-gen-row .btn-primary {
+  white-space: nowrap;
+}
+
+/* a division in the tenant's list: status, the steps done so far, and what is next */
+.division-row-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+  text-align: right;
+}
+
+.division-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.division-progress-bar {
+  display: flex;
+  gap: 3px;
+}
+
+.division-progress-seg {
+  width: 26px;
+  height: 6px;
+  background: var(--soft-line);
+  border-radius: 999px;
+}
+
+.division-progress-done {
+  background: var(--lamp);
+}
+
+.division-progress-current {
+  background: var(--lamp-text);
+  opacity: 0.5;
+}
+
+.division-progress-text {
+  color: var(--mist);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .division-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .division-row-side,
+  .division-progress {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* one division per row in the tenant's list, with its progress on the right */
+.tenant-section .division-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tenant-section .division-row {
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .division-row-side,
+  .division-progress {
+    width: 100%;
+  }
+}

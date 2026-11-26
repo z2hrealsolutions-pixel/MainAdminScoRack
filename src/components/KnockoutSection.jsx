@@ -71,6 +71,9 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
 
   return (
     <div>
+      <details className="tool-fold" open={chosen !== 'plan'}>
+      <summary>Other ways to build the bracket</summary>
+      <div className="tool-fold-body">
       <div className="mode-choice" role="radiogroup" aria-label="How to build the knockout">
         <label className={`mode-card ${chosen === 'plan' ? 'mode-card-on' : ''}`}>
           <input type="radio" name="koMode" checked={chosen === 'plan'} onChange={() => setMode('plan')} />
@@ -106,6 +109,8 @@ export default function KnockoutSection({ tenantId, divisionId, division }) {
           </label>
         )}
       </div>
+      </div>
+      </details>
 
       {chosen === 'plan' && (
         <KnockoutPlanPanel

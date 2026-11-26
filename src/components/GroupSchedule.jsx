@@ -4,7 +4,8 @@ import { supabase } from '../supabaseClient';
 import GroupsImport from './GroupsImport';
 import TeamsPoolsImport from './TeamsPoolsImport';
 
-export default function GroupSchedule({ tenantId, divisionId, divisionName, category, tiebreak = 'classic', onGenerated }) {
+export default function GroupSchedule({ tenantId, divisionId, divisionName, category, tiebreak = 'classic', onGenerated, view = 'pools' }) {
+  const [onlyToPlay, setOnlyToPlay] = useState(false);
   const [groupCount, setGroupCount] = useState(4);
   const [genState, setGenState] = useState('idle'); // idle | generating | error
   const [genError, setGenError] = useState('');
@@ -190,149 +191,212 @@ export default function GroupSchedule({ tenantId, divisionId, divisionName, cate
     return <div className="callout-error">Couldn't load groups: {loadError}</div>;
   }
 
+  const pools = data ? data.groups.filter((g) => !g.is_playoff) : [];
+  const teamLink = (id) => `/tenants/${tenantId}/divisions/${divisionId}/teams/${id}`;
+  const matchLink = (id) => `/tenants/${tenantId}/divisions/${divisionId}/matchups/${id}`;
+  const statusInfo = (status) =>
+    status === 'complete' ? { text: 'Done', cls: 'chip-done' } : status === 'live' ? { text: 'Live', cls: 'chip-live' } : { text: 'To play', cls: 'chip-todo' };
+
+  // ---- the matches, pool by pool ----
+  if (view === 'matches') {
+    if (!data) return <p className="tenants-empty mono">Loading…</p>;
+    if (pools.length === 0) {
+      return <p className="tenants-empty">No pool matches yet. Set up the pools in step 1 and the matches are made for you.</p>;
+    }
+    return (
+      <div>
+        <label className="check-row">
+          <input type="checkbox" checked={onlyToPlay} onChange={(event) => setOnlyToPlay(event.target.checked)} />
+          <span>Only show matches still to play</span>
+        </label>
+        <div className="pool-grid">
+          {pools.map((group) => {
+            const total = group.matchups.length;
+            const done = group.matchups.filter((m) => m.status === 'complete').length;
+            const shown = group.matchups.filter((m) => !onlyToPlay || m.status !== 'complete');
+            return (
+              <section key={group.id} className="pool-card">
+                <header className="pool-head">
+                  <h3 className="pool-title">{group.name}</h3>
+                  <span className="pool-count">{done} of {total} played</span>
+                </header>
+                <div className="pool-progress" aria-hidden="true">
+                  <span style={{ width: total ? `${(done / total) * 100}%` : '0%' }} />
+                </div>
+                <div className="match-list">
+                  {shown.length === 0 && <p className="field-hint">All played.</p>}
+                  {shown.map((m) => {
+                    const info = statusInfo(m.status);
+                    return (
+                      <Link key={m.id} to={matchLink(m.id)} className="match-row">
+                        <span className="match-teams">
+                          <span>{m.teamAName}</span>
+                          <span className="match-vs">vs</span>
+                          <span>{m.teamBName}</span>
+                        </span>
+                        <span className="match-side">
+                          {m.result && <span className="match-score">{m.result}</span>}
+                          <span className={`match-chip ${info.cls}`}>{info.text}</span>
+                          <span className="match-when">{m.when || 'No court or time yet'}</span>
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ---- the pools and who is in them ----
+  const hasPools = pools.length > 0;
   return (
     <div>
-      <div className="bracket-gen-row">
-        <label className="field-label" htmlFor="groupCount">
-          Number of groups
-        </label>
-        <input
-          id="groupCount"
-          type="number"
-          min="1"
-          className="text-input bracket-gen-input"
-          value={groupCount}
-          onChange={(event) => setGroupCount(event.target.value)}
-        />
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={genState === 'generating'}
-          onClick={handleGenerate}
-        >
-          {genState === 'generating' ? 'Generating…' : 'Generate groups'}
-        </button>
-      </div>
-      {genState === 'error' && <div className="callout-error">{genError}</div>}
-
-      {data && (
-        <TeamsPoolsImport
-          divisionId={divisionId}
-          existingTeams={data.allTeams}
-          hasResults={false}
-          onImported={() => {
-            setReloadKey((k) => k + 1);
-            if (onGenerated) onGenerated();
-          }}
-        />
+      {data && !hasPools && (
+        <div className="empty-card">
+          <h3 className="empty-card-title">No pools yet</h3>
+          <p className="field-hint">
+            Split the teams into pools in one go, or import a file that lists every team with its pool. The pool matches are made for you.
+          </p>
+        </div>
       )}
 
-      {data && (
-        <GroupsImport
-          divisionId={divisionId}
-          divisionName={divisionName}
-          teams={data.allTeams}
-          groups={data.groups}
-          onImported={() => {
-            setReloadKey((k) => k + 1);
-            if (onGenerated) onGenerated();
-          }}
-        />
+      {hasPools && (
+        <div className="pool-grid">
+          {pools.map((group) => (
+            <section key={group.id} className="pool-card">
+              <header className="pool-head">
+                <h3 className="pool-title">{group.name}</h3>
+                <span className="pool-count">{group.teams.length} teams</span>
+              </header>
+              <div className="pool-table-wrap">
+                <table className="pool-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Team</th>
+                      <th title="Played">P</th>
+                      <th title="Won">W</th>
+                      <th title="Lost">L</th>
+                      <th title="Point difference">+/-</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.teams.map((team) => (
+                      <tr key={team.id}>
+                        <td className="pool-rank">{team.position}</td>
+                        <td className="pool-team"><Link to={teamLink(team.id)}>{team.name}</Link></td>
+                        <td>{team.played}</td>
+                        <td>{team.wins}</td>
+                        <td>{team.losses}</td>
+                        <td>{team.pointDiff > 0 ? `+${team.pointDiff}` : team.pointDiff}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+        </div>
       )}
-
-      {data && data.groups.length > 0 && (
+      {hasPools && (
         <p className="field-hint">
           {tiebreak === 'points'
-            ? 'Teams are ranked by wins, then point difference, then points scored, then head to head, then original seed.'
-            : 'Teams are ranked by wins, then head-to-head between the teams level, then point difference, then original seed.'}{' '}
-          A league division is ranked by points first.
+            ? 'Order: most wins, then point difference, then points scored, then head to head.'
+            : 'Order: most wins, then head to head, then point difference.'}{' '}
+          Tap a team to correct its name.
         </p>
       )}
-      {data?.groups.length === 0 && (
-        <p className="tenants-empty">No groups yet, generate them above.</p>
-      )}
 
-      <div className="group-cards">
-      {data?.groups.map((group) => (
-        <div key={group.id} className="group-card">
-          <h3 className="group-card-title">
-            {group.name}
-            {group.is_playoff && <span className="group-playoff-tag mono">playoff</span>}
-          </h3>
-          <ol className="group-team-list">
-            {group.teams.map((team) => (
-              <li key={team.id}>
-                {team.name}
-                {team.seed ? <span className="mono group-seed"> #{team.seed}</span> : null}
-                <span className="group-team-points">
-                  {team.wins}-{team.losses} · PD {team.pointDiff > 0 ? '+' : ''}{team.pointDiff} · {team.points} pts · {team.played} played
-                </span>
-              </li>
-            ))}
-          </ol>
-          <div className="group-matchups">
-            {group.matchups.map((m) => (
-              <Link
-                key={m.id}
-                to={`/tenants/${tenantId}/divisions/${divisionId}/matchups/${m.id}`}
-                className="group-matchup-link"
-              >
-                <span>
-                  {m.teamAName} <span className="mist">vs</span> {m.teamBName}
-                </span>
-                <span>
-                  {m.when && <span className="group-matchup-when mono">{m.when} </span>}
-                  {m.result && <span className="group-matchup-result">{m.result} </span>}
-                  <span className={`group-matchup-status mono ${m.status === 'live' ? 'status-live' : ''}`}>{m.status}</span>
-                </span>
-              </Link>
-            ))}
+      <details className="tool-fold" open={data ? !hasPools : false}>
+        <summary>{hasPools ? 'Change the pools' : 'Set up the pools'}</summary>
+        <div className="tool-fold-body">
+          <div className="tool-block">
+            <h4 className="tool-title">Split the teams into pools automatically</h4>
+            <div className="bracket-gen-row">
+              <label className="field-label" htmlFor="groupCount">
+                Number of pools
+              </label>
+              <input
+                id="groupCount"
+                type="number"
+                min="1"
+                className="text-input bracket-gen-input"
+                value={groupCount}
+                onChange={(event) => setGroupCount(event.target.value)}
+              />
+              <button type="button" className="btn-primary" disabled={genState === 'generating'} onClick={handleGenerate}>
+                {genState === 'generating' ? 'Working…' : 'Make pools'}
+              </button>
+            </div>
+            {genState === 'error' && <div className="callout-error">{genError}</div>}
           </div>
-        </div>
-      ))}
-      </div>
 
-      {data && data.groups.filter((g) => !g.is_playoff).length > 1 && (
-        <div className="swap-box">
-          <h3 className="group-card-title">Swap two teams between groups</h3>
-          <p className="field-hint">
-            Refused once either team has a recorded result. If you've already generated the bracket,
-            generate it again afterwards.
-          </p>
-          <div className="swap-row">
-            {[
-              [swapA, setSwapA, 'First team'],
-              [swapB, setSwapB, 'Second team'],
-            ].map(([value, setter, label]) => (
-              <select
-                key={label}
-                className="text-input"
-                aria-label={label}
-                value={value}
-                onChange={(event) => setter(event.target.value)}
-              >
-                <option value="">{label}</option>
-                {data.groups.filter((g) => !g.is_playoff).map((g) =>
-                  g.teams.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({g.name})
-                    </option>
-                  ))
-                )}
-              </select>
-            ))}
-            <button
-              type="button"
-              className="btn-ghost"
-              disabled={!swapA || !swapB || swapA === swapB || swapBusy}
-              onClick={handleSwap}
-            >
-              {swapBusy ? 'Swapping…' : 'Swap groups'}
-            </button>
-          </div>
-          {swapError && <div className="callout-error">{swapError}</div>}
+          {data && (
+            <div className="tool-block">
+              <h4 className="tool-title">Import teams and pools from a file</h4>
+              <TeamsPoolsImport
+                divisionId={divisionId}
+                existingTeams={data.allTeams}
+                hasResults={false}
+                onImported={() => {
+                  setReloadKey((k) => k + 1);
+                  if (onGenerated) onGenerated();
+                }}
+              />
+            </div>
+          )}
+
+          {data && (
+            <div className="tool-block">
+              <h4 className="tool-title">Move existing teams into pools with a file</h4>
+              <GroupsImport
+                divisionId={divisionId}
+                divisionName={divisionName}
+                teams={data.allTeams}
+                groups={data.groups}
+                onImported={() => {
+                  setReloadKey((k) => k + 1);
+                  if (onGenerated) onGenerated();
+                }}
+              />
+            </div>
+          )}
+
+          {pools.length > 1 && (
+            <div className="tool-block">
+              <h4 className="tool-title">Swap two teams between pools</h4>
+              <p className="field-hint">
+                Not possible once either team has a result. If the bracket is already built, build it again afterwards.
+              </p>
+              <div className="swap-row">
+                {[
+                  [swapA, setSwapA, 'First team'],
+                  [swapB, setSwapB, 'Second team'],
+                ].map(([value, setter, label]) => (
+                  <select key={label} className="text-input" aria-label={label} value={value} onChange={(event) => setter(event.target.value)}>
+                    <option value="">{label}</option>
+                    {pools.map((g) =>
+                      g.teams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({g.name})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                ))}
+                <button type="button" className="btn-ghost" disabled={!swapA || !swapB || swapA === swapB || swapBusy} onClick={handleSwap}>
+                  {swapBusy ? 'Swapping…' : 'Swap pools'}
+                </button>
+              </div>
+              {swapError && <div className="callout-error">{swapError}</div>}
+            </div>
+          )}
         </div>
-      )}
+      </details>
     </div>
   );
 }

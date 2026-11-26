@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import SectionNav from '../components/SectionNav';
-import { useParams, Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Shell from '../components/Shell';
 import StatusPill from '../components/StatusPill';
@@ -12,19 +11,31 @@ import RulesPanel from '../components/RulesPanel';
 import DuprExport from '../components/DuprExport';
 import DeleteDivision from '../components/DeleteDivision';
 import RefereeCodes from '../components/RefereeCodes';
-import { CATEGORIES, FORMATS } from '../lib/divisions';
+import { Stepper, NextUp } from '../components/DivisionSteps';
+import { CATEGORIES, FORMATS, categoryLabel, formatLabel } from '../lib/divisions';
+import { computeSteps, nextUp, hasPools } from '../lib/divisionSteps';
+import { STAGES, describeRule } from '../lib/presets';
 import '../styles/tenants.css';
 import '../styles/bracket.css';
 import '../styles/plan.css';
+import '../styles/steps.css';
 
 const DIVISION_COLS =
   'id, name, category, format_type, age_label, gender_label, status, group_win_points, tiebreak_mode, match_rules, knockout_template';
 
 const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft', hint: 'Hidden from the public, even if the tenant is active.' },
-  { value: 'active', label: 'Published', hint: 'Visible on the public view and open to referee scoring.' },
-  { value: 'completed', label: 'Completed', hint: 'Tournament finished. Stays visible for the record.' },
+  { value: 'draft', label: 'Draft', hint: 'Hidden from the public. Referees cannot score it yet.' },
+  { value: 'active', label: 'Published', hint: 'Live: visible to the public and open to referee scoring.' },
+  { value: 'completed', label: 'Completed', hint: 'The division is finished. It stays visible for the record.' },
 ];
+
+const STEP_TITLES = {
+  teams: ['Teams & pools', 'Who is playing, and which pool each team is in. The pool matches are made for you.'],
+  rules: ['Rules', 'How points, sets and tie-breaks work. The settings already match the format, so only change them if you need to.'],
+  live: ['Go live', 'Publish the division so referees can score and the public can follow. You can switch it back to draft at any time.'],
+  matches: ['Pool matches', 'Every pool match, with its court and time. Open one to enter the score.'],
+  knockout: ['Knockout', 'The bracket after the pools. Check who plays whom, then create it.'],
+};
 
 export default function DivisionDetail({ email }) {
   const { tenantId, divisionId } = useParams();
@@ -36,6 +47,35 @@ export default function DivisionDetail({ email }) {
   const [rosterKey, setRosterKey] = useState(0);
   const [seedState, setSeedState] = useState('idle'); // idle | seeding | done | error
   const [seedError, setSeedError] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [progress, setProgress] = useState(null);
+
+  const loadProgress = useCallback(async () => {
+    const [teamsRes, groupsRes, matchesRes] = await Promise.all([
+      supabase.from('teams').select('id, group_id').eq('division_id', divisionId),
+      supabase.from('groups').select('id, is_playoff').eq('division_id', divisionId),
+      supabase.from('matchups').select('id, group_id, stage, status').eq('division_id', divisionId),
+    ]);
+    if (teamsRes.error || groupsRes.error || matchesRes.error) return;
+    const pools = groupsRes.data.filter((g) => !g.is_playoff);
+    const poolMatches = matchesRes.data.filter((m) => m.group_id && m.stage === 'group');
+    const knockout = matchesRes.data.filter((m) => !m.group_id && m.stage !== 'group');
+    const finals = knockout.filter((m) => m.stage === 'Final');
+    const decider = finals.length > 0 ? finals : knockout;
+    setProgress({
+      teams: teamsRes.data.length,
+      ungrouped: teamsRes.data.filter((t) => !t.group_id).length,
+      groups: pools.length,
+      poolMatches: poolMatches.length,
+      poolMatchesDone: poolMatches.filter((m) => m.status === 'complete').length,
+      knockoutExists: knockout.length > 0,
+      knockoutDone: decider.length > 0 && decider.every((m) => m.status === 'complete' || m.status === 'bye'),
+    });
+  }, [divisionId]);
+
+  useEffect(() => {
+    loadProgress();
+  }, [loadProgress]);
 
   useEffect(() => {
     let isMounted = true;
@@ -163,6 +203,25 @@ export default function DivisionDetail({ email }) {
     );
   }
 
+  const full = progress ? { ...progress, status: division.status, formatType: division.format_type } : null;
+  const steps = full ? computeSteps(full) : [];
+  const next = full ? nextUp(full) : null;
+  const requested = searchParams.get('step');
+  const current = steps.find((x) => x.state === 'current');
+  const active = steps.some((x) => x.id === requested) ? requested : current ? current.id : steps.length > 0 ? steps[steps.length - 1].id : 'teams';
+
+  function goTo(step) {
+    setSearchParams({ step }, { replace: false });
+    loadProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const rules = division.match_rules || {};
+  const pools = hasPools(division.format_type);
+  // only the stages this division actually has a rule for; a division with none set shows them all
+  const setRows = STAGES.filter((st) => (st.key === 'group' ? pools : rules[st.key]));
+  const stageRows = setRows.length > 0 ? setRows : STAGES.filter((st) => pools || st.key !== 'group');
+
   return (
     <Shell email={email}>
       <Link to={`/tenants/${tenantId}`} className="tenants-back mono">
@@ -173,220 +232,164 @@ export default function DivisionDetail({ email }) {
         <h1 className="dash-headline">{division.name}</h1>
         <StatusPill status={division.status} />
       </div>
+      <p className="division-meta">
+        {categoryLabel(division.category)} · {formatLabel(division.format_type)}
+        {full ? ` · ${full.teams} team${full.teams === 1 ? '' : 's'}` : ''}
+      </p>
 
-      <SectionNav
-        items={[
-          { id: 'sec-status', label: 'Status' },
-          { id: 'sec-details', label: 'Details' },
-          { id: 'sec-teams', label: 'Teams' },
-          { id: 'sec-rules', label: 'Scoring rules' },
-          { id: 'sec-seeding', label: 'Seeding' },
-          ...(division.format_type === 'group_then_knockout' ? [{ id: 'sec-groups', label: 'Groups' }] : []),
-          { id: 'sec-bracket', label: 'Bracket' },
-          { id: 'sec-codes', label: 'Referee codes' },
-          { id: 'sec-export', label: 'DUPR export' },
-          { id: 'sec-delete', label: 'Delete' },
-        ]}
-      />
+      {next && <NextUp next={next} onGo={goTo} />}
+      {full && <Stepper progress={full} active={active} onPick={goTo} />}
 
-      <section id="sec-status" className="tenant-section" style={{ marginTop: 'var(--space-4)' }}>
-        <h2 className="tenant-section-title">Status</h2>
-        <StatusControl
-          options={STATUS_OPTIONS}
-          current={division.status}
-          onChange={handleStatusChange}
-        />
-      </section>
+      <section className="tenant-section step-panel">
+        <h2 className="tenant-section-title">{STEP_TITLES[active]?.[0] ?? ''}</h2>
+        <p className="step-lead">{STEP_TITLES[active]?.[1] ?? ''}</p>
 
-      <section id="sec-details" className="tenant-section">
-        <h2 className="tenant-section-title">Details</h2>
-        <form onSubmit={handleSave} className="tenant-form">
-          <div>
-            <label className="field-label" htmlFor="name">
-              Division name
-            </label>
-            <input
-              id="name"
-              className="text-input"
-              value={form.name}
-              onChange={(event) => setForm({ ...form, name: event.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="field-label" htmlFor="category">
-              Category
-            </label>
-            <select
-              id="category"
-              className="text-input"
-              value={form.category}
-              onChange={(event) => setForm({ ...form, category: event.target.value })}
-            >
-              {CATEGORIES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="field-label" htmlFor="format">
-              Format
-            </label>
-            <select
-              id="format"
-              className="text-input"
-              value={form.format_type}
-              onChange={(event) => setForm({ ...form, format_type: event.target.value })}
-            >
-              {FORMATS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="field-label" htmlFor="gender">
-              Gender label
-            </label>
-            <input
-              id="gender"
-              className="text-input"
-              value={form.gender_label}
-              onChange={(event) => setForm({ ...form, gender_label: event.target.value })}
-              placeholder="Men's, Women's, Mixed, Open…"
-            />
-          </div>
-
-          <div>
-            <label className="field-label" htmlFor="age">
-              Age label
-            </label>
-            <input
-              id="age"
-              className="text-input"
-              value={form.age_label}
-              onChange={(event) => setForm({ ...form, age_label: event.target.value })}
-              placeholder="Open, 40+, 50+…"
-            />
-          </div>
-
-          {form.category !== 'league' && (
-            <div>
-              <label className="field-label" htmlFor="winPoints">
-                Standings points per group win
-              </label>
-              <input
-                id="winPoints"
-                className="text-input"
-                inputMode="numeric"
-                value={form.group_win_points}
-                onChange={(event) => setForm({ ...form, group_win_points: event.target.value })}
+        {active === 'teams' && (
+          <>
+            {pools && (
+              <GroupSchedule
+                view="pools"
+                tenantId={tenantId}
+                divisionId={divisionId}
+                divisionName={division.name}
+                category={division.category}
+                tiebreak={division.tiebreak_mode}
+                onGenerated={loadProgress}
               />
-              <p className="field-hint">
-                What a win is worth in the group stage table. League divisions set points per
-                rubber instead.
-              </p>
-            </div>
-          )}
-
-          {saveState === 'error' && (
-            <div className="callout-error" role="alert">
-              {saveError}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="btn-primary tenant-form-submit"
-            disabled={!hasChanges || !/^\d+$/.test(form.group_win_points) || saveState === 'saving'}
-          >
-            {saveState === 'saving' ? 'Saving…' : 'Save changes'}
-          </button>
-          {saveState === 'saved' && !hasChanges && (
-            <span className="field-hint">Saved.</span>
-          )}
-        </form>
-      </section>
-
-      <section id="sec-teams" className="tenant-section">
-        <h2 className="tenant-section-title">Rosters</h2>
-        <RosterSection
-          key={rosterKey}
-          tenantId={tenantId}
-          divisionId={divisionId}
-          category={division.category}
-        />
-      </section>
-
-      <section id="sec-rules" className="tenant-section">
-        <h2 className="tenant-section-title">Scoring rules</h2>
-        <RulesPanel tenantId={tenantId} divisionId={divisionId} division={division} onSaved={reloadDivision} />
-      </section>
-
-      <section id="sec-seeding" className="tenant-section">
-        <h2 className="tenant-section-title">Seeding</h2>
-        <p className="dash-sub" style={{ marginBottom: 'var(--space-3)' }}>
-          Ranks every team by its roster's average DUPR rating, highest first.
-          Teams with no rating on file sort last instead of breaking the order.
-          Any seed already set by hand gets overwritten.
-        </p>
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={seedState === 'seeding'}
-          onClick={handleSeed}
-        >
-          {seedState === 'seeding' ? 'Seeding…' : 'Seed by DUPR rating'}
-        </button>
-        {seedState === 'done' && (
-          <span className="field-hint" style={{ marginLeft: 'var(--space-3)' }}>
-            Done, seeds updated below.
-          </span>
+            )}
+            <details className="tool-fold" open={!pools || (full ? full.teams === 0 : false)}>
+              <summary>{pools ? 'Add or remove teams' : 'Teams'}</summary>
+              <div className="tool-fold-body">
+                <RosterSection key={rosterKey} tenantId={tenantId} divisionId={divisionId} category={division.category} />
+              </div>
+            </details>
+          </>
         )}
-        {seedState === 'error' && (
-          <div className="callout-error" style={{ marginTop: 'var(--space-3)' }}>
-            {seedError}
-          </div>
-        )}
-      </section>
 
-      {division.format_type === 'group_then_knockout' && (
-        <section id="sec-groups" className="tenant-section">
-          <h2 className="tenant-section-title">Groups</h2>
+        {active === 'rules' && (
+          <>
+            <ul className="rule-summary">
+              {stageRows.map((st) => (
+                <li key={st.key}>
+                  <span className="rule-stage">{st.label}</span>
+                  <span className="rule-text">{describeRule(rules[st.key])}</span>
+                </li>
+              ))}
+              <li>
+                <span className="rule-stage">Tie in a pool</span>
+                <span className="rule-text">
+                  {division.tiebreak_mode === 'points'
+                    ? 'Most wins, then point difference, then points scored, then head to head'
+                    : 'Most wins, then head to head, then point difference'}
+                </span>
+              </li>
+            </ul>
+            <details className="tool-fold">
+              <summary>Change the rules</summary>
+              <div className="tool-fold-body">
+                <RulesPanel tenantId={tenantId} divisionId={divisionId} division={division} onSaved={reloadDivision} />
+              </div>
+            </details>
+          </>
+        )}
+
+        {active === 'live' && (
+          <>
+            <StatusControl options={STATUS_OPTIONS} current={division.status} onChange={async (v) => { await handleStatusChange(v); loadProgress(); }} />
+            <details className="tool-fold">
+              <summary>Referee codes</summary>
+              <div className="tool-fold-body">
+                <p className="field-hint">Give each referee the code for their pool. They use it to open the scoring screen.</p>
+                <RefereeCodes tenantId={tenantId} divisionId={divisionId} divisionName={division.name} />
+              </div>
+            </details>
+          </>
+        )}
+
+        {active === 'matches' && pools && (
           <GroupSchedule
+            view="matches"
             tenantId={tenantId}
             divisionId={divisionId}
             divisionName={division.name}
             category={division.category}
             tiebreak={division.tiebreak_mode}
           />
-        </section>
-      )}
+        )}
 
-      <section id="sec-bracket" className="tenant-section">
-        <h2 className="tenant-section-title">Bracket</h2>
-        <KnockoutSection tenantId={tenantId} divisionId={divisionId} division={division} />
+        {active === 'knockout' && (
+          <KnockoutSection tenantId={tenantId} divisionId={divisionId} division={division} />
+        )}
       </section>
 
-      <section id="sec-codes" className="tenant-section">
-        <h2 className="tenant-section-title">Referee codes</h2>
-        <RefereeCodes tenantId={tenantId} divisionId={divisionId} divisionName={division.name} />
-      </section>
+      <details className="adv-fold">
+        <summary>Advanced settings</summary>
+        <div className="adv-body">
+          <section className="adv-block">
+            <h3 className="adv-title">Division details</h3>
+            <form onSubmit={handleSave} className="tenant-form">
+              <div>
+                <label className="field-label" htmlFor="name">Division name</label>
+                <input id="name" className="text-input" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+              </div>
+              <div>
+                <label className="field-label" htmlFor="category">Category</label>
+                <select id="category" className="text-input" value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>
+                  {CATEGORIES.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="field-label" htmlFor="format">Format</label>
+                <select id="format" className="text-input" value={form.format_type} onChange={(event) => setForm({ ...form, format_type: event.target.value })}>
+                  {FORMATS.map((option) => (<option key={option.value} value={option.value}>{option.label}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="field-label" htmlFor="gender">Gender label</label>
+                <input id="gender" className="text-input" value={form.gender_label} onChange={(event) => setForm({ ...form, gender_label: event.target.value })} placeholder="Men's, Women's, Mixed, Open…" />
+              </div>
+              <div>
+                <label className="field-label" htmlFor="age">Age label</label>
+                <input id="age" className="text-input" value={form.age_label} onChange={(event) => setForm({ ...form, age_label: event.target.value })} placeholder="Open, 40+, 50+…" />
+              </div>
+              {form.category !== 'league' && (
+                <div>
+                  <label className="field-label" htmlFor="winPoints">Standings points per group win</label>
+                  <input id="winPoints" className="text-input" inputMode="numeric" value={form.group_win_points} onChange={(event) => setForm({ ...form, group_win_points: event.target.value })} />
+                  <p className="field-hint">What a win is worth in the pool table. League divisions set points per rubber instead.</p>
+                </div>
+              )}
+              {saveState === 'error' && (<div className="callout-error" role="alert">{saveError}</div>)}
+              <button type="submit" className="btn-primary tenant-form-submit" disabled={!hasChanges || !/^\d+$/.test(form.group_win_points) || saveState === 'saving'}>
+                {saveState === 'saving' ? 'Saving…' : 'Save changes'}
+              </button>
+              {saveState === 'saved' && !hasChanges && <span className="field-hint">Saved.</span>}
+            </form>
+          </section>
 
-      <section id="sec-export" className="tenant-section">
-        <h2 className="tenant-section-title">Export to DUPR</h2>
-        <DuprExport tenantId={tenantId} division={division} />
-      </section>
+          <section className="adv-block">
+            <h3 className="adv-title">Seeding</h3>
+            <p className="field-hint">
+              Ranks every team by its players' average DUPR rating, highest first. Teams with no rating go last. Seeds set by hand are overwritten.
+            </p>
+            <button type="button" className="btn-ghost" disabled={seedState === 'seeding'} onClick={handleSeed}>
+              {seedState === 'seeding' ? 'Seeding…' : 'Seed by DUPR rating'}
+            </button>
+            {seedState === 'done' && <span className="field-hint"> Done.</span>}
+            {seedState === 'error' && <div className="callout-error">{seedError}</div>}
+          </section>
 
-      <section id="sec-delete" className="tenant-section">
-        <h2 className="tenant-section-title">Delete division</h2>
-        <DeleteDivision tenantId={tenantId} divisionId={divisionId} />
-      </section>
+          <section className="adv-block">
+            <h3 className="adv-title">Export to DUPR</h3>
+            <DuprExport tenantId={tenantId} division={division} />
+          </section>
+
+          <section className="adv-block">
+            <h3 className="adv-title">Delete division</h3>
+            <DeleteDivision tenantId={tenantId} divisionId={divisionId} />
+          </section>
+        </div>
+      </details>
     </Shell>
   );
 }

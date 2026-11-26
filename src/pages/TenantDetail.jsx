@@ -220,6 +220,37 @@ export default function TenantDetail({ email }) {
       </section>
 
       <section className="tenant-section">
+        <h2 className="tenant-section-title">Share with players and referees</h2>
+        {addresses.spectators || addresses.tv || addresses.referees ? (
+          <dl className="address-list">
+            {[
+              ['Spectators', addresses.spectators, 'Live scores, standings and brackets'],
+              ['TV board', addresses.tv, 'Full screen, for a TV at the venue'],
+              ['Referees', addresses.referees, 'Scoring with a group code'],
+            ]
+              .filter(([, href]) => href)
+              .map(([label, href, note]) => (
+                <div key={label} className="address-row">
+                  <dt>{label}</dt>
+                  <dd>
+                    <a href={href} target="_blank" rel="noreferrer" className="mono">
+                      {href}
+                    </a>
+                    <span className="field-hint"> {note}</span>
+                  </dd>
+                </div>
+              ))}
+          </dl>
+        ) : (
+          <p className="field-hint">
+            Set VITE_PUBLIC_URL, VITE_REFEREE_URL and VITE_TV_URL in this app's environment (or just
+            VITE_USER_APP_URL, if all three share one address), and the spectator, TV and referee
+            addresses for this tenant show here.
+          </p>
+        )}
+      </section>
+
+      <section className="tenant-section">
         <h2 className="tenant-section-title">Venue</h2>
         <p className="field-hint">
           Where this tenant's tournaments are played. The address is used in the DUPR export.
@@ -303,37 +334,9 @@ export default function TenantDetail({ email }) {
 
       <StaffSection tenantId={tenant.id} venueName={tenant.name} />
 
-      <section className="tenant-section">
-        <h2 className="tenant-section-title">Addresses to share</h2>
-        {addresses.spectators || addresses.tv || addresses.referees ? (
-          <dl className="address-list">
-            {[
-              ['Spectators', addresses.spectators, 'Live scores, standings and brackets'],
-              ['TV board', addresses.tv, 'Full screen, for a TV at the venue'],
-              ['Referees', addresses.referees, 'Scoring with a group code'],
-            ]
-              .filter(([, href]) => href)
-              .map(([label, href, note]) => (
-                <div key={label} className="address-row">
-                  <dt>{label}</dt>
-                  <dd>
-                    <a href={href} target="_blank" rel="noreferrer" className="mono">
-                      {href}
-                    </a>
-                    <span className="field-hint"> {note}</span>
-                  </dd>
-                </div>
-              ))}
-          </dl>
-        ) : (
-          <p className="field-hint">
-            Set VITE_PUBLIC_URL, VITE_REFEREE_URL and VITE_TV_URL in this app's environment (or just
-            VITE_USER_APP_URL, if all three share one address), and the spectator, TV and referee
-            addresses for this tenant show here.
-          </p>
-        )}
-      </section>
-
+      <details className="adv-fold">
+        <summary>Advanced settings</summary>
+        <div className="adv-body">
       {access.isOperator && (
         <>
       <section className="tenant-section">
@@ -473,6 +476,8 @@ export default function TenantDetail({ email }) {
           </form>
         </section>
       )}
+        </div>
+      </details>
       </div>
     </Shell>
   );
