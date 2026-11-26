@@ -9,6 +9,7 @@ import DivisionList from '../components/DivisionList';
 import StaffSection from '../components/StaffSection';
 import DeleteTenant from '../components/DeleteTenant';
 import OverrideCodePanel from '../components/OverrideCodePanel';
+import BrandKitSection from '../components/BrandKitSection';
 import { useVenueAccess } from '../lib/access';
 import { slugify, isValidSlug } from '../lib/slugify';
 import { SPORTS } from '../lib/sports';
@@ -333,6 +334,8 @@ export default function TenantDetail({ email }) {
       </section>
 
       <StaffSection tenantId={tenant.id} venueName={tenant.name} />
+
+      <BrandKitSection tenantId={tenant.id} tenantName={tenant.name} />
 
       <details className="adv-fold">
         <summary>Advanced settings</summary>

@@ -1,0 +1,291 @@
+/* The Brand kit section of a tenant: the pictures, the two colours, and the preview of the tenant's pages.
+   The preview frames show the live app's own surfaces, so those colours come from the frame (set in
+   BrandPreview.jsx), not from this console's theme. Everything else uses the console's settings. */
+
+.brand-kit .bk-access {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--soft-inner);
+  border-radius: var(--radius-inner);
+  padding: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.brand-kit .bk-access p {
+  margin: 2px 0 0;
+}
+
+.callout-note {
+  font-size: 13.5px;
+  color: var(--paper);
+  background: var(--soft-inner);
+  border-radius: var(--radius-inner);
+  padding: 10px 14px;
+  margin: var(--space-3) 0;
+}
+
+.bk-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+@media (min-width: 760px) {
+  .bk-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bk-field .field-hint {
+  margin: 2px 0 var(--space-2);
+}
+
+.bk-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--soft-inner);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-inner);
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+
+.bk-slot img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.bk-slot-logo {
+  height: 110px;
+}
+
+.bk-slot-banner {
+  aspect-ratio: 3 / 1;
+}
+
+.bk-empty {
+  font-size: 13px;
+  color: var(--mist-dim);
+}
+
+.bk-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bk-buttons,
+.bk-save-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.bk-save-row {
+  margin-top: var(--space-4);
+}
+
+.bk-colour-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bk-swatch {
+  width: 48px;
+  height: 44px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--soft-inner);
+  cursor: pointer;
+}
+
+.bk-hex {
+  max-width: 140px;
+}
+
+.bk-bad {
+  color: var(--danger);
+}
+
+.bk-subtitle {
+  font-size: 15px;
+  font-weight: 500;
+  margin: var(--space-4) 0 var(--space-1);
+}
+
+.bk-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13.5px;
+}
+
+.bk-log ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--mist);
+}
+
+.bk-log li {
+  padding: 4px 0;
+}
+
+/* ---- the preview: two small copies of the tenant's page, dark and light ---- */
+
+.bp-pair {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+@media (min-width: 760px) {
+  .bp-pair {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bp-frame {
+  background: var(--bp-page);
+  border: 1px solid var(--bp-line);
+  border-radius: 14px;
+  overflow: hidden;
+  color: var(--bp-paper);
+  font-size: 13px;
+}
+
+.bp-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bp-bar);
+  padding: 10px 12px;
+  border-bottom: 3px solid var(--bp-line);
+}
+
+.bp-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.bp-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bp-plate {
+  display: inline-flex;
+  background: var(--bp-plate);
+  border-radius: 8px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.bp-plate img {
+  display: block;
+  height: 22px;
+  width: auto;
+  max-width: 90px;
+  object-fit: contain;
+}
+
+.bp-scoreit {
+  height: 20px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.bp-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bp-banner {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.bp-tile {
+  background: var(--bp-tile);
+  border: 1px solid var(--bp-line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.bp-tile-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bp-live {
+  color: var(--lamp-text);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.bp-muted {
+  color: var(--bp-mist);
+}
+
+.bp-score-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.bp-score {
+  color: var(--lamp-score);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.bp-score-dim {
+  color: var(--bp-mist);
+}
+
+.bp-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.bp-button {
+  background: var(--lamp);
+  color: var(--on-lamp);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 600;
+}
+
+.bp-link {
+  color: var(--lamp-text);
+}
