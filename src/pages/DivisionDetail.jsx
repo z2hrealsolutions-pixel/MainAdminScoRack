@@ -49,6 +49,9 @@ export default function DivisionDetail({ email }) {
   const [seedError, setSeedError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const [progress, setProgress] = useState(null);
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState('');
+  const [statusNote, setStatusNote] = useState('');
 
   const loadProgress = useCallback(async () => {
     const [teamsRes, groupsRes, matchesRes] = await Promise.all([
@@ -148,20 +151,40 @@ export default function DivisionDetail({ email }) {
     setSaveState('saved');
   }
 
+  // Changes the status and tells the person what happened, either way. Nothing here fails silently.
   async function handleStatusChange(nextStatus) {
+    setStatusBusy(true);
+    setStatusError('');
+    setStatusNote('');
     const { data, error } = await supabase
       .from('divisions')
       .update({ status: nextStatus })
       .eq('id', divisionId)
       .select(DIVISION_COLS)
       .single();
+    setStatusBusy(false);
 
-    if (error) {
-      setSaveState('error');
-      setSaveError(error.message);
-      return;
+    if (error || !data || data.status !== nextStatus) {
+      setStatusError(
+        `The status was NOT changed${error ? `: ${error.message}` : '.'} Try again, and sign in again if it keeps failing.`
+      );
+      return false;
     }
     setDivision(data);
+    setStatusNote(
+      nextStatus === 'active'
+        ? 'Published. Referees can now score this division and the public can see it.'
+        : nextStatus === 'draft'
+          ? 'Switched back to draft. It is hidden from the public and referees cannot score it.'
+          : 'Marked completed.'
+    );
+    return true;
+  }
+
+  async function publishNow() {
+    if (!window.confirm(`Go live with ${division.name}? The public can see it and referees can start scoring.`)) return;
+    await handleStatusChange('active');
+    loadProgress();
   }
 
   async function handleSeed() {
@@ -213,7 +236,10 @@ export default function DivisionDetail({ email }) {
   function goTo(step) {
     setSearchParams({ step }, { replace: false });
     loadProgress();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // already on that step: bring its panel into view so the click visibly does something
+    const panel = document.querySelector('.step-panel');
+    if (step === active && panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const rules = division.match_rules || {};
@@ -237,7 +263,17 @@ export default function DivisionDetail({ email }) {
         {full ? ` · ${full.teams} team${full.teams === 1 ? '' : 's'}` : ''}
       </p>
 
-      {next && <NextUp next={next} onGo={goTo} />}
+      {statusError && (
+        <div className="callout-error" role="alert">
+          {statusError}
+        </div>
+      )}
+      {statusNote && !statusError && (
+        <p className="field-hint step-note" role="status">
+          {statusNote}
+        </p>
+      )}
+      {next && <NextUp next={next} onGo={goTo} onAct={(a) => a === 'publish' && publishNow()} busy={statusBusy} />}
       {full && <Stepper progress={full} active={active} onPick={goTo} />}
 
       <section className="tenant-section step-panel">
@@ -295,7 +331,15 @@ export default function DivisionDetail({ email }) {
 
         {active === 'live' && (
           <>
-            <StatusControl options={STATUS_OPTIONS} current={division.status} onChange={async (v) => { await handleStatusChange(v); loadProgress(); }} />
+            <StatusControl
+              options={STATUS_OPTIONS}
+              current={division.status}
+              disabled={statusBusy}
+              onChange={async (v) => {
+                await handleStatusChange(v);
+                loadProgress();
+              }}
+            />
             <details className="tool-fold">
               <summary>Referee codes</summary>
               <div className="tool-fold-body">

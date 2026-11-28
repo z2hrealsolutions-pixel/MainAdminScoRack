@@ -22,6 +22,10 @@ assert.match(nextUp({ ...teamsOnly, groups: 2, ungrouped: 1 }).text, /1 team is 
 const pooled = { ...base, teams: 6, groups: 2, poolMatches: 6 };
 assert.equal(ids(pooled), 'teams:done rules:done live:current matches:todo knockout:todo');
 assert.equal(nextUp(pooled).step, 'live');
+// the Go live button must PUBLISH, not just open the step that is already open
+assert.equal(nextUp(pooled).button, 'Go live');
+assert.equal(nextUp(pooled).action, 'publish');
+assert.equal(nextUp(teamsOnly).action, undefined);
 
 // published: playing the pool matches
 const playing = { ...pooled, status: 'active', poolMatchesDone: 2 };

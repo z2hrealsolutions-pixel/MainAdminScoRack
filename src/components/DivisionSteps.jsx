@@ -25,7 +25,8 @@ export function Stepper({ progress, active, onPick }) {
 }
 
 // What to do next, in one sentence and one button.
-export function NextUp({ next, onGo }) {
+// A step with an `action` does that thing itself (publish); the others take you to the step. `busy` stops double clicks.
+export function NextUp({ next, onGo, onAct, busy }) {
   return (
     <div className="nextup" role="status">
       <div className="nextup-text">
@@ -34,8 +35,13 @@ export function NextUp({ next, onGo }) {
         {next.text && <span className="nextup-hint">{next.text}</span>}
       </div>
       {next.button && (
-        <button type="button" className="btn-primary nextup-btn" onClick={() => onGo(next.step)}>
-          {next.button}
+        <button
+          type="button"
+          className="btn-primary nextup-btn"
+          disabled={!!busy}
+          onClick={() => (next.action && onAct ? onAct(next.action) : onGo(next.step))}
+        >
+          {busy ? 'Working…' : next.button}
         </button>
       )}
     </div>

@@ -68,7 +68,7 @@ export function nextUp(progress) {
       }
       return { step: 'teams', title: 'Finish the pools', text: `${p.ungrouped} team${p.ungrouped === 1 ? ' is' : 's are'} not in a pool yet.`, button: 'Set up pools' };
     case 'live':
-      return { step: 'live', title: 'Publish this division', text: 'It is a draft, so referees cannot score it and the public cannot see it. Publish it when the teams and rules are right.', button: 'Go live' };
+      return { step: 'live', title: 'Publish this division', text: 'It is a draft, so referees cannot score it and the public cannot see it. Publish it when the teams and rules are right.', button: 'Go live', action: 'publish' };
     case 'matches': {
       const left = Math.max(0, p.poolMatches - p.poolMatchesDone);
       return { step: 'matches', title: `${left} pool match${left === 1 ? '' : 'es'} left to play`, text: 'Open a match to enter its score, or set its court and time.', button: 'See matches' };

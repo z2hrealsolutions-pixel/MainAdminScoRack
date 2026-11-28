@@ -1,4 +1,4 @@
-export default function StatusControl({ options, current, onChange }) {
+export default function StatusControl({ options, current, onChange, disabled = false }) {
   return (
     <div className="status-options">
       {options.map((option) => (
@@ -9,7 +9,7 @@ export default function StatusControl({ options, current, onChange }) {
             current === option.value ? 'status-option-active' : ''
           }`}
           onClick={() => onChange(option.value)}
-          disabled={current === option.value}
+          disabled={disabled || current === option.value}
         >
           <span className="status-option-label">{option.label}</span>
           <span className="status-option-hint">{option.hint}</span>
